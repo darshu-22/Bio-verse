@@ -1,67 +1,117 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
 const bcrypt = require('bcrypt');
 const mysql = require('mysql2/promise');
 const path = require('path');
 
+const isProd = process.env.NODE_ENV === 'production';
+
+if (isProd && !process.env.SESSION_SECRET) {
+  console.error('SESSION_SECRET environment variable is required in production');
+  process.exit(1);
+}
+
 const app = express();
-const port = process.env.PORT || 8000;
+
+app.set('trust proxy', 1);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'bioverse_secret_key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false,
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000
-  }
-}));
+const useSSL = process.env.DB_SSL === 'true';
 
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
-  port: parseInt(process.env.DB_PORT || '3306', 10)
+  database: process.env.DB_NAME || 'bioverse_db',
+  port: parseInt(process.env.DB_PORT || '3306', 10),
+  waitForConnections: true,
+  connectionLimit: 5,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000,
+  ...(useSSL ? { ssl: { rejectUnauthorized: true } } : {})
 };
 
-const dbName = process.env.DB_NAME || 'bioverse_db';
-let pool;
+let pool = null;
+let initPromise = null;
 
-async function initDB() {
+function getPool() {
+  if (!pool) {
+    pool = mysql.createPool(dbConfig);
+  }
+  return pool;
+}
+
+async function initSchema() {
+  if (initPromise) return initPromise;
+  initPromise = (async () => {
+    try {
+      const p = getPool();
+      await p.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          full_name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) UNIQUE NOT NULL,
+          password_hash VARCHAR(255) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB;
+      `);
+    } catch (err) {
+      initPromise = null;
+      console.error('Schema initialization failed:', err.message);
+      throw err;
+    }
+  })();
+  return initPromise;
+}
+
+const sessionStoreConfig = {
+  host: dbConfig.host,
+  user: dbConfig.user,
+  password: dbConfig.password,
+  database: dbConfig.database,
+  port: dbConfig.port,
+  ...(useSSL ? { ssl: { rejectUnauthorized: true } } : {}),
+  createDatabaseTable: true,
+  schema: {
+    tableName: 'sessions',
+    columnNames: {
+      session_id: 'session_id',
+      expires: 'expires',
+      data: 'data'
+    }
+  }
+};
+
+const sessionStore = new MySQLStore(sessionStoreConfig);
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'bioverse_dev_secret',
+  store: sessionStore,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: isProd,
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000
+  }
+}));
+
+async function requireDB(req, res, next) {
   try {
-    const connection = await mysql.createConnection(dbConfig);
-    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\`;`);
-    await connection.end();
-
-    pool = mysql.createPool({
-      ...dbConfig,
-      database: dbName,
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0
-    });
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        full_name VARCHAR(255) NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password_hash VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      ) ENGINE=InnoDB;
-    `);
+    await initSchema();
+    next();
   } catch (err) {
-    console.error('Database initialization failed:', err);
-    process.exit(1);
+    res.status(503).json({ error: 'Database temporarily unavailable' });
   }
 }
 
-app.post('/api/auth/signup', async (req, res) => {
+app.post('/api/auth/signup', requireDB, async (req, res) => {
   try {
     const { full_name, email, password, confirmPassword } = req.body;
 
@@ -81,13 +131,14 @@ app.post('/api/auth/signup', async (req, res) => {
       return res.status(400).json({ error: 'Passwords do not match' });
     }
 
-    const [existing] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
+    const p = getPool();
+    const [existing] = await p.execute('SELECT id FROM users WHERE email = ?', [email]);
     if (existing.length > 0) {
       return res.status(400).json({ error: 'Email is already registered' });
     }
 
     const password_hash = await bcrypt.hash(password, 10);
-    const [result] = await pool.execute(
+    const [result] = await p.execute(
       'INSERT INTO users (full_name, email, password_hash) VALUES (?, ?, ?)',
       [full_name, email, password_hash]
     );
@@ -95,11 +146,12 @@ app.post('/api/auth/signup', async (req, res) => {
     const userId = result.insertId;
     res.status(201).json({ id: userId, full_name, email });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Signup error:', err.message);
+    res.status(500).json({ error: 'Registration failed. Please try again.' });
   }
 });
 
-app.post('/api/auth/signin', async (req, res) => {
+app.post('/api/auth/signin', requireDB, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -107,7 +159,8 @@ app.post('/api/auth/signin', async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const [users] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
+    const p = getPool();
+    const [users] = await p.execute('SELECT * FROM users WHERE email = ?', [email]);
     if (users.length === 0) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
@@ -121,7 +174,8 @@ app.post('/api/auth/signin', async (req, res) => {
     req.session.userId = user.id;
     res.status(200).json({ id: user.id, full_name: user.full_name, email: user.email });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Signin error:', err.message);
+    res.status(500).json({ error: 'Sign in failed. Please try again.' });
   }
 });
 
@@ -131,19 +185,27 @@ app.get('/api/auth/me', async (req, res) => {
       return res.status(200).json(null);
     }
 
-    const [users] = await pool.execute(
+    try {
+      await initSchema();
+    } catch (err) {
+      return res.status(503).json({ error: 'Database temporarily unavailable' });
+    }
+
+    const p = getPool();
+    const [users] = await p.execute(
       'SELECT id, full_name, email FROM users WHERE id = ?',
       [req.session.userId]
     );
 
     if (users.length === 0) {
-      req.session.destroy();
+      req.session.destroy(() => {});
       return res.status(200).json(null);
     }
 
     res.status(200).json(users[0]);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Session check error:', err.message);
+    res.status(200).json(null);
   }
 });
 
@@ -157,14 +219,37 @@ app.post('/api/auth/logout', (req, res) => {
   });
 });
 
-app.use(express.static(__dirname));
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'API route not found' });
+});
+
+app.use(express.static(path.join(__dirname)));
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-initDB().then(() => {
-  app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-  });
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err.message);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: 'An unexpected error occurred' });
 });
+
+if (require.main === module) {
+  const port = process.env.PORT || 8000;
+  initSchema()
+    .then(() => {
+      app.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+      });
+    })
+    .catch((err) => {
+      console.error('Failed to initialize schema on startup:', err.message);
+      console.log('Starting server without confirmed schema — DB may be unavailable');
+      app.listen(port, () => {
+        console.log(`Server running on port ${port} (DB unavailable)`);
+      });
+    });
+}
+
+module.exports = app;
