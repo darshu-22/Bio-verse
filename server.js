@@ -219,6 +219,25 @@ app.post('/api/auth/logout', (req, res) => {
   });
 });
 
+app.get('/api/debug/assets', (req, res) => {
+  const fs = require('fs');
+  res.json({
+    cwd: process.cwd(),
+    dirname: __dirname,
+    indexExists: fs.existsSync(path.join(__dirname, 'index.html')),
+    cssVariablesExists: fs.existsSync(path.join(__dirname, 'css', 'variables.css')),
+    cssHomepageExists: fs.existsSync(path.join(__dirname, 'css', 'homepage.css')),
+    jsNavigationExists: fs.existsSync(path.join(__dirname, 'js', 'navigation.js')),
+    rootDirs: fs.readdirSync(__dirname).filter(f => {
+      try {
+        return fs.statSync(path.join(__dirname, f)).isDirectory();
+      } catch (e) {
+        return false;
+      }
+    })
+  });
+});
+
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'API route not found' });
 });
