@@ -121,6 +121,15 @@ app.post('/api/auth/signup', requireDB, async (req, res) => {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
+    const trimmedName = typeof full_name === 'string' ? full_name.trim() : '';
+    if (trimmedName.length < 2 || trimmedName.length > 100) {
+      return res.status(400).json({ error: 'Full name must be between 2 and 100 characters' });
+    }
+
+    if (/[\u0000-\u001F\u007F-\u009F<>]/.test(trimmedName)) {
+      return res.status(400).json({ error: 'Full name contains invalid characters' });
+    }
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
     }
@@ -141,11 +150,11 @@ app.post('/api/auth/signup', requireDB, async (req, res) => {
     const password_hash = await bcrypt.hash(password, 10);
     const [result] = await pool.execute(
       'INSERT INTO users (full_name, email, password_hash) VALUES (?, ?, ?)',
-      [full_name, email, password_hash]
+      [trimmedName, email, password_hash]
     );
 
     const userId = result.insertId;
-    res.status(201).json({ id: userId, full_name, email });
+    res.status(201).json({ id: userId, full_name: trimmedName, email });
   } catch (err) {
     console.error('Signup error:', err.message);
     res.status(500).json({ error: 'Registration failed. Please try again.' });

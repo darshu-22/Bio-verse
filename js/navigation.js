@@ -49,15 +49,30 @@ class BioNavigation {
     const navActions = document.querySelector('.nav-actions');
     if (!navActions) return;
 
+    navActions.innerHTML = '';
+
     if (window.currentUser) {
-      navActions.innerHTML = `
-        <span class="user-greeting">Hi, ${window.currentUser.full_name.split(' ')[0]}</span>
-        <button class="btn-glass btn-sm" id="nav-logout-btn" aria-label="Log out of your account">Logout</button>
-      `;
+      const greetingSpan = document.createElement('span');
+      greetingSpan.className = 'user-greeting';
+      greetingSpan.textContent = `Hi, ${window.currentUser.full_name.split(' ')[0]}`;
+
+      const logoutBtn = document.createElement('button');
+      logoutBtn.className = 'btn-glass btn-sm';
+      logoutBtn.id = 'nav-logout-btn';
+      logoutBtn.setAttribute('aria-label', 'Log out of your account');
+      logoutBtn.textContent = 'Logout';
+
+      navActions.appendChild(greetingSpan);
+      navActions.appendChild(document.createTextNode(' '));
+      navActions.appendChild(logoutBtn);
     } else {
-      navActions.innerHTML = `
-        <button class="btn-primary btn-sm" id="nav-signin-btn" aria-label="Sign in to your account">Sign In</button>
-      `;
+      const signinBtn = document.createElement('button');
+      signinBtn.className = 'btn-primary btn-sm';
+      signinBtn.id = 'nav-signin-btn';
+      signinBtn.setAttribute('aria-label', 'Sign in to your account');
+      signinBtn.textContent = 'Sign In';
+
+      navActions.appendChild(signinBtn);
     }
   }
 
