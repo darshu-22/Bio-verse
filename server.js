@@ -17,8 +17,20 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({
+  limit: '10kb',
+  strict: true
+}));
+
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ error: 'Malformed request body' });
+  }
+  if (err.status === 413) {
+    return res.status(413).json({ error: 'Payload too large' });
+  }
+  next(err);
+});
 
 const useSSL = process.env.DB_SSL === 'true';
 
@@ -69,6 +81,101 @@ async function initSchema() {
   return initPromise;
 }
 
+function isPlainObject(val) {
+  return val !== null && typeof val === 'object' && !Array.isArray(val);
+}
+
+function hasOnlyAllowedFields(body, allowedList) {
+  return Object.keys(body).every(key => allowedList.includes(key));
+}
+
+function requireJsonContentType(req, res, next) {
+  const contentType = req.headers['content-type'] || '';
+  if (!contentType.toLowerCase().startsWith('application/json')) {
+    return res.status(415).json({ error: 'Content-Type must be application/json' });
+  }
+  next();
+}
+
+function validateBodyShape(req, res, next) {
+  if (!isPlainObject(req.body)) {
+    return res.status(400).json({ error: 'Request body must be a plain JSON object' });
+  }
+  next();
+}
+
+function validateSignupBody(req, res, next) {
+  const allowed = ['full_name', 'email', 'password', 'confirmPassword'];
+  if (!hasOnlyAllowedFields(req.body, allowed)) {
+    return res.status(400).json({ error: 'Unexpected fields in request' });
+  }
+
+  const { full_name, email, password, confirmPassword } = req.body;
+
+  if (typeof full_name !== 'string' || typeof email !== 'string' || typeof password !== 'string' || typeof confirmPassword !== 'string') {
+    return res.status(400).json({ error: 'All fields must be strings' });
+  }
+
+  const trimmedName = full_name.trim();
+  if (trimmedName.length < 2 || trimmedName.length > 100) {
+    return res.status(400).json({ error: 'Full name must be between 2 and 100 characters' });
+  }
+
+  if (/[\u0000-\u001F\u007F-\u009F<>]/.test(trimmedName)) {
+    return res.status(400).json({ error: 'Full name contains invalid characters' });
+  }
+
+  const trimmedEmail = email.trim().toLowerCase();
+  if (trimmedEmail.length < 3 || trimmedEmail.length > 254) {
+    return res.status(400).json({ error: 'Email must be between 3 and 254 characters' });
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail) || /[\u0000-\u001F\u007F-\u009F]/.test(trimmedEmail)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+
+  if (password.length < 6 || password.length > 128) {
+    return res.status(400).json({ error: 'Password must be between 6 and 128 characters' });
+  }
+
+  if (/[\u0000-\u001F\u007F-\u009F]/.test(password)) {
+    return res.status(400).json({ error: 'Password contains control characters' });
+  }
+
+  if (password !== confirmPassword) {
+    return res.status(400).json({ error: 'Passwords do not match' });
+  }
+
+  req.body.full_name = trimmedName;
+  req.body.email = trimmedEmail;
+  next();
+}
+
+function validateSigninBody(req, res, next) {
+  const allowed = ['email', 'password'];
+  if (!hasOnlyAllowedFields(req.body, allowed)) {
+    return res.status(400).json({ error: 'Unexpected fields in request' });
+  }
+
+  const { email, password } = req.body;
+
+  if (typeof email !== 'string' || typeof password !== 'string') {
+    return res.status(400).json({ error: 'All fields must be strings' });
+  }
+
+  const trimmedEmail = email.trim().toLowerCase();
+  if (!trimmedEmail || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  if (trimmedEmail.length > 254 || password.length > 128) {
+    return res.status(400).json({ error: 'Invalid email or password length' });
+  }
+
+  req.body.email = trimmedEmail;
+  next();
+}
+
 app.use(async (req, res, next) => {
   try {
     await initSchema();
@@ -113,34 +220,9 @@ async function requireDB(req, res, next) {
   }
 }
 
-app.post('/api/auth/signup', requireDB, async (req, res) => {
+app.post('/api/auth/signup', requireJsonContentType, validateBodyShape, validateSignupBody, requireDB, async (req, res) => {
   try {
-    const { full_name, email, password, confirmPassword } = req.body;
-
-    if (!full_name || !email || !password || !confirmPassword) {
-      return res.status(400).json({ error: 'All fields are required' });
-    }
-
-    const trimmedName = typeof full_name === 'string' ? full_name.trim() : '';
-    if (trimmedName.length < 2 || trimmedName.length > 100) {
-      return res.status(400).json({ error: 'Full name must be between 2 and 100 characters' });
-    }
-
-    if (/[\u0000-\u001F\u007F-\u009F<>]/.test(trimmedName)) {
-      return res.status(400).json({ error: 'Full name contains invalid characters' });
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ error: 'Invalid email format' });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
-    }
-
-    if (password !== confirmPassword) {
-      return res.status(400).json({ error: 'Passwords do not match' });
-    }
+    const { full_name, email, password } = req.body;
 
     const [existing] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
     if (existing.length > 0) {
@@ -150,24 +232,20 @@ app.post('/api/auth/signup', requireDB, async (req, res) => {
     const password_hash = await bcrypt.hash(password, 10);
     const [result] = await pool.execute(
       'INSERT INTO users (full_name, email, password_hash) VALUES (?, ?, ?)',
-      [trimmedName, email, password_hash]
+      [full_name, email, password_hash]
     );
 
     const userId = result.insertId;
-    res.status(201).json({ id: userId, full_name: trimmedName, email });
+    res.status(201).json({ id: userId, full_name, email });
   } catch (err) {
     console.error('Signup error:', err.message);
     res.status(500).json({ error: 'Registration failed. Please try again.' });
   }
 });
 
-app.post('/api/auth/signin', requireDB, async (req, res) => {
+app.post('/api/auth/signin', requireJsonContentType, validateBodyShape, validateSigninBody, requireDB, async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
 
     const [users] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
     if (users.length === 0) {
