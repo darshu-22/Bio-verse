@@ -31,10 +31,7 @@
       "src": "/data/(.*)",
       "dest": "/public/data/$1"
     },
-    {
-      "src": "/diagnostics.html",
-      "dest": "/public/diagnostics.html"
-    },
+
     {
       "src": "/favicon.ico",
       "dest": "/public/favicon.ico"
