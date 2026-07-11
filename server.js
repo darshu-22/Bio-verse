@@ -412,15 +412,18 @@ const sessionStore = new MySQLStore({
 }, pool);
 
 app.use(session({
+  name: 'bvx.sid',
   secret: process.env.SESSION_SECRET || 'bioverse_dev_secret',
   store: sessionStore,
   resave: false,
   saveUninitialized: false,
+  rolling: false,
   cookie: {
     secure: isProd,
     httpOnly: true,
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 8 * 60 * 60 * 1000,
+    path: '/'
   }
 }));
 
@@ -474,20 +477,21 @@ app.post('/api/auth/signin', requireJsonContentType, validateBodyShape, validate
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // Successful authentication — reset account failure state only
-    resetAccountFailures(pool, accountHash).catch(() => {});
-
     req.session.regenerate((err) => {
       if (err) {
-        console.error('AUTH_SESSION_ERROR:', err.message);
-        return res.status(500).json({ error: 'Sign in failed. Please try again.' });
+        console.error('AUTH_SESSION_REGENERATE_ERROR:', err.message);
+        return res.status(503).json({ error: 'Service temporarily unavailable' });
       }
       req.session.userId = user.id;
       req.session.save((err) => {
         if (err) {
-          console.error('AUTH_SESSION_ERROR:', err.message);
-          return res.status(500).json({ error: 'Sign in failed. Please try again.' });
+          console.error('AUTH_SESSION_SAVE_ERROR:', err.message);
+          return res.status(503).json({ error: 'Service temporarily unavailable' });
         }
+        // Successful authentication & session persist — reset account failure state only
+        resetAccountFailures(pool, accountHash).catch((dbErr) => {
+          console.error('Failed to reset account failures:', dbErr.message);
+        });
         res.status(200).json({ id: user.id, full_name: user.full_name, email: user.email });
       });
     });
@@ -529,9 +533,15 @@ app.get('/api/auth/me', async (req, res) => {
 app.post('/api/auth/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) {
-      return res.status(500).json({ error: 'Could not log out' });
+      console.error('AUTH_SESSION_DESTROY_ERROR:', err.message);
+      return res.status(503).json({ error: 'Service temporarily unavailable' });
     }
-    res.clearCookie('connect.sid');
+    res.clearCookie('bvx.sid', {
+      path: '/',
+      secure: isProd,
+      httpOnly: true,
+      sameSite: 'lax'
+    });
     res.status(200).json({ success: true });
   });
 });
