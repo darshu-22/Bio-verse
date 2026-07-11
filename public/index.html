@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="BioVerse X — The next-generation immersive anatomy education platform for schools. Explore the human body in stunning 3D." />
+  <meta name="keywords" content="anatomy, education, 3D human body, medical simulation, school platform, biology" />
+  <meta name="author" content="BioVerse X" />
+  <meta property="og:title" content="BioVerse X — Immersive Human Anatomy" />
+  <meta property="og:description" content="Explore the living digital human body in stunning 3D. The future of anatomy education." />
+  <title>BioVerse X — Immersive Human Anatomy Education</title>
+
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.min.js" crossorigin="anonymous"></script>
+
+  
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/components.css?v=auth-fix-v3" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/homepage.css?v=auth-fix-v3" />
+  <link rel="stylesheet" href="css/explore.css" />
+  <link rel="stylesheet" href="css/organ-panel.css" />
+  <link rel="stylesheet" href="css/cinematic-nav.css" />
+  <link rel="stylesheet" href="css/vitals-panel.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <link rel="stylesheet" href="css/gesture-control.css" />
+
+  <link rel="stylesheet" href="css/school-platform.css" />
+</head>
+<body>
+  
+  <canvas id="particle-canvas"></canvas>
+
+  
+  <div class="grid-overlay" aria-hidden="true"></div>
+
+  
+  <section id="homepage" class="page active" role="main" aria-label="BioVerse X Home">
+
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+      <div class="nav-brand">
+        <div class="nav-logo" aria-label="BioVerse X logo">
+          <div class="logo-icon">
+            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <circle cx="20" cy="20" r="18" stroke="url(#logoGrad)" stroke-width="2"/>
+              <path d="M12 20 C12 14 16 10 20 10 C24 10 28 14 28 20 C28 26 24 30 20 30 C16 30 12 26 12 20Z" stroke="url(#logoGrad)" stroke-width="1.5" fill="none"/>
+              <path d="M20 10 L20 30 M12 20 L28 20" stroke="url(#logoGrad)" stroke-width="1" opacity="0.6"/>
+              <circle cx="20" cy="20" r="3" fill="url(#logoGrad)"/>
+              <defs>
+                <linearGradient id="logoGrad" x1="0" y1="0" x2="40" y2="40">
+                  <stop offset="0%" stop-color="#00d4ff"/>
+                  <stop offset="100%" stop-color="#7b2fff"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <span class="logo-text">BioVerse <span class="logo-x">X</span></span>
+        </div>
+      </div>
+
+      <div class="nav-links" role="list">
+        <a href="#" class="nav-link active" role="listitem" id="nav-home">Home</a>
+        <a href="#" class="nav-link" role="listitem" id="nav-about">About</a>
+        <a href="#" class="nav-link" role="listitem" id="nav-explore-link">Explore</a>
+      </div>
+
+      <div class="nav-actions">
+        <button class="btn-primary btn-sm" id="nav-signin-btn" aria-label="Sign in to your account">Sign In</button>
+      </div>
+    </nav>
+
+    <div class="hero-section">
+
+      <div class="hero-content">
+        <h1 class="hero-title">
+          Spatial Interactive
+          <br />
+          <span class="gradient-text">3D Anatomy</span>
+        </h1>
+
+        <p class="hero-subtitle">
+          An interactive 3D human anatomy exploration platform controlled through computer vision and hand gestures. Dissect, analyze, and interact with high-fidelity organ models touchlessly.
+        </p>
+
+        <div class="hero-cta" role="group" aria-label="Call to action buttons">
+          <button class="btn-explore" id="explore-btn" aria-label="Start exploring the 3D human body">
+            <span>Explore BioVerse X</span>
+            <span class="btn-explore-arrow" aria-hidden="true">→</span>
+          </button>
+
+          <button class="btn-glass btn-lg" id="learn-more-btn" aria-label="Learn more about BioVerse X">
+            Learn More
+          </button>
+        </div>
+      </div>
+
+      <div class="hero-viewer-container" id="hero-viewer-container">
+        <canvas id="hero-canvas"></canvas>
+        <div class="hero-loader" id="hero-loader">
+          <div class="hero-spinner"></div>
+          <span>Loading 3D Anatomy...</span>
+        </div>
+        <div class="hero-label-tag label-top" id="label-tag-1">INTERACTIVE 3D</div>
+        <div class="hero-label-tag label-mid" id="label-tag-2">COMPUTER VISION</div>
+        <div class="hero-label-tag label-bot" id="label-tag-3">GESTURE CONTROL</div>
+      </div>
+    </div>
+
+    <div class="about-section" id="about-section">
+      <div class="about-container">
+        <span class="about-eyebrow">About BioVerse X</span>
+        <h2 class="about-title">What is BioVerse X?</h2>
+        <p class="about-text">
+          BioVerse X bridges the gap between static textbook diagrams and physical organ models. By utilizing computer vision, it enables touchless, gesture-driven spatial interaction with sub-millimeter accurate 3D organ structures, allowing medical professionals, educators, and researchers to dissect, analyze, and learn with intuitive hand commands.
+        </p>
+      </div>
+    </div>
+
+    <div class="systems-section">
+      <div class="systems-header">
+        <h2 class="systems-title">Anatomy Systems</h2>
+        <p class="systems-subtitle">Explore the high-fidelity 3D organ systems supported by BioVerse X</p>
+      </div>
+
+      <div class="systems-grid" role="list" aria-label="Body system cards">
+
+        <div class="system-card" id="card-fullBody" role="listitem">
+          <div class="system-card-glow glow-blue"></div>
+          <div class="system-card-icon">🧍</div>
+          <div class="system-card-content">
+            <h3>Full Body</h3>
+            <p>Complete integumentary and combined anatomical structure</p>
+          </div>
+          <div class="system-card-badge">Full Model</div>
+        </div>
+
+        <div class="system-card" id="card-skeletal" role="listitem">
+          <div class="system-card-glow glow-blue"></div>
+          <div class="system-card-icon">🦴</div>
+          <div class="system-card-content">
+            <h3>Skeletal System</h3>
+            <p>206 bones · Joints · Cartilage framework</p>
+          </div>
+          <div class="system-card-badge">206 Bones</div>
+        </div>
+
+        <div class="system-card" id="card-muscular" role="listitem">
+          <div class="system-card-glow glow-orange"></div>
+          <div class="system-card-icon">💪</div>
+          <div class="system-card-content">
+            <h3>Muscular System</h3>
+            <p>640 skeletal muscles · Tendons · Fascia layers</p>
+          </div>
+          <div class="system-card-badge">640 Muscles</div>
+        </div>
+
+        <div class="system-card" id="card-nervous" role="listitem">
+          <div class="system-card-glow glow-purple"></div>
+          <div class="system-card-icon">🧠</div>
+          <div class="system-card-content">
+            <h3>Nervous System</h3>
+            <p>Central brain · Spinal cord · Peripheral nerves</p>
+          </div>
+          <div class="system-card-badge">86B Neurons</div>
+        </div>
+
+        <div class="system-card" id="card-circulatory" role="listitem">
+          <div class="system-card-glow glow-red"></div>
+          <div class="system-card-icon">❤️</div>
+          <div class="system-card-content">
+            <h3>Circulatory</h3>
+            <p>Heart muscle · Arteries · Veins network</p>
+          </div>
+          <div class="system-card-badge">Vessel Path</div>
+        </div>
+
+        <div class="system-card" id="card-digestive" role="listitem">
+          <div class="system-card-glow glow-green"></div>
+          <div class="system-card-icon">🫀</div>
+          <div class="system-card-content">
+            <h3>Digestive System</h3>
+            <p>Esophagus · Stomach · Intestines · Liver gland</p>
+          </div>
+          <div class="system-card-badge">9m Tract</div>
+        </div>
+
+        <div class="system-card" id="card-respiratory" role="listitem">
+          <div class="system-card-glow glow-cyan"></div>
+          <div class="system-card-icon">🫁</div>
+          <div class="system-card-content">
+            <h3>Respiratory</h3>
+            <p>Lungs · Trachea · Bronchi · Alveoli</p>
+          </div>
+          <div class="system-card-badge">Air Pathways</div>
+        </div>
+
+        <div class="system-card" id="card-immune" role="listitem">
+          <div class="system-card-glow glow-blue"></div>
+          <div class="system-card-icon">🛡️</div>
+          <div class="system-card-content">
+            <h3>Immune System</h3>
+            <p>Spleen · Lymph nodes · Lymphatic vessels</p>
+          </div>
+          <div class="system-card-badge">Defense</div>
+        </div>
+
+      </div>
+
+      <div class="systems-section-cta">
+        <button class="btn-explore btn-lg" id="systems-explore-btn" aria-label="Explore all organ systems">
+          <span>Explore BioVerse X</span>
+          <span class="btn-explore-arrow" aria-hidden="true">→</span>
+        </button>
+      </div>
+    </div>
+
+    <footer class="site-footer" role="contentinfo">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <span class="footer-logo">BioVerse <span class="logo-x">X</span></span>
+          <p>Next-generation spatial interactive 3D human anatomy.</p>
+        </div>
+        <div class="footer-links" role="navigation" aria-label="Footer navigation">
+          <a href="#" id="footer-privacy">Privacy Policy</a>
+          <a href="#" id="footer-terms">Terms of Service</a>
+          <a href="#" id="footer-contact">Contact Sales</a>
+        </div>
+        <div class="footer-copy">
+          © 2026 BioVerse X. All rights reserved.
+        </div>
+      </div>
+    </footer>
+
+  </section>
+
+  
+  <section id="explore-page" class="page" role="main" aria-label="Body Explorer">
+
+    
+    <nav class="explorer-nav" role="navigation" aria-label="Explorer navigation">
+      <button class="btn-glass btn-sm" id="back-home-btn" aria-label="Return to homepage">
+        ← Back
+      </button>
+      <div class="explorer-nav-center">
+        <span class="explorer-system-label" id="active-system-label">Full Body</span>
+      </div>
+      <div class="explorer-nav-actions">
+        <button class="btn-glass btn-sm" id="reset-view-btn" aria-label="Reset camera view">Reset View</button>
+        <button class="btn-glass btn-sm" id="fullscreen-btn" aria-label="Toggle fullscreen mode">⛶ Fullscreen</button>
+      </div>
+    </nav>
+
+    
+    <div class="explorer-layout">
+
+      
+      <aside class="explorer-sidebar left-sidebar" aria-label="System selector">
+        <h3 class="sidebar-title">Systems</h3>
+        <div class="sidebar-system-list" role="list" id="system-list">
+          <div class="sidebar-system-item active" role="listitem button" tabindex="0" data-system="fullBody" id="sys-fullBody">
+            <span class="sys-dot" style="background:#00d4ff"></span>
+            <span class="sys-icon">🧍</span>
+            <span class="sys-name">Full Body</span>
+          </div>
+          <div class="sidebar-system-item" role="listitem button" tabindex="0" data-system="skeletal" id="sys-skeletal">
+            <span class="sys-dot" style="background:#d4d4d8"></span>
+            <span class="sys-icon">🦴</span>
+            <span class="sys-name">Skeletal</span>
+          </div>
+          <div class="sidebar-system-item" role="listitem button" tabindex="0" data-system="muscular" id="sys-muscular">
+            <span class="sys-dot" style="background:#f43f5e"></span>
+            <span class="sys-icon">💪</span>
+            <span class="sys-name">Muscular</span>
+          </div>
+          <div class="sidebar-system-item" role="listitem button" tabindex="0" data-system="nervous" id="sys-nervous">
+            <span class="sys-dot" style="background:#a855f7"></span>
+            <span class="sys-icon">🧠</span>
+            <span class="sys-name">Nervous</span>
+          </div>
+          <div class="sidebar-system-item" role="listitem button" tabindex="0" data-system="circulatory" id="sys-circulatory">
+            <span class="sys-dot" style="background:#ef4444"></span>
+            <span class="sys-icon">❤️</span>
+            <span class="sys-name">Circulatory</span>
+          </div>
+          <div class="sidebar-system-item" role="listitem button" tabindex="0" data-system="digestive" id="sys-digestive">
+            <span class="sys-dot" style="background:#f59e0b"></span>
+            <span class="sys-icon">🫀</span>
+            <span class="sys-name">Digestive</span>
+          </div>
+          <div class="sidebar-system-item" role="listitem button" tabindex="0" data-system="respiratory" id="sys-respiratory">
+            <span class="sys-dot" style="background:#22d3ee"></span>
+            <span class="sys-icon">🫁</span>
+            <span class="sys-name">Respiratory</span>
+          </div>
+          <div class="sidebar-system-item" role="listitem button" tabindex="0" data-system="immune" id="sys-immune">
+            <span class="sys-dot" style="background:#06b6d4"></span>
+            <span class="sys-icon">🛡️</span>
+            <span class="sys-name">Immune</span>
+          </div>
+        </div>
+
+
+
+
+
+        
+        <div class="opacity-control" aria-label="Zoom control">
+          <div class="opacity-label">
+            <span>Zoom</span>
+            <span class="opacity-value" id="zoom-display">1.0×</span>
+          </div>
+          <input type="range" id="zoom-slider" min="40" max="300" value="100" class="opacity-slider" aria-label="Adjust zoom" />
+        </div>
+      </aside>
+
+      
+      <main class="explorer-main" role="main" aria-label="3D anatomy viewer">
+        <canvas id="explorer-canvas" aria-label="Interactive 3D anatomy model - drag to rotate, scroll to zoom"></canvas>
+
+        
+        <div class="cin-flash" id="cin-flash" aria-hidden="true"></div>
+
+        
+        <nav class="cin-breadcrumb" id="cin-breadcrumb"
+             role="navigation" aria-label="Anatomy navigation breadcrumb">
+          
+        </nav>
+
+
+        
+        <div class="explorer-hud" aria-label="Heads up display">
+          <div class="hud-top-left">
+            <span class="hud-label">BioVerse X · Anatomy Explorer</span>
+            <span class="hud-system" id="hud-system">Full Body</span>
+          </div>
+          <div class="hud-top-right">
+            <div class="hud-data">
+              <span class="hud-data-label">Zoom</span>
+              <span class="hud-data-value" id="hud-zoom">1.0×</span>
+            </div>
+            <div class="hud-data">
+              <span class="hud-data-label">Angle</span>
+              <span class="hud-data-value" id="hud-rotation">0°</span>
+            </div>
+            <div class="hud-gesture-wrap" style="display: flex; gap: 8px; align-items: center;">
+              <span id="hud-gesture" aria-label="Active gesture" aria-live="polite"></span>
+              <button
+                id="gesture-toggle-btn"
+                class=""
+                aria-pressed="false"
+                aria-label="Enable gesture control"
+                title="Enable Gesture Control"
+              >
+                <span class="gesture-btn-icon">✋</span>
+                <span>Gestures</span>
+                <span class="gesture-btn-dot"></span>
+              </button>
+
+            </div>
+          </div>
+          <div class="hud-scan-line" aria-hidden="true"></div>
+        </div>
+
+        
+
+        
+        <div class="organ-hover-label" id="organ-hover-label" role="tooltip" aria-live="polite">
+          <span class="organ-hover-name" id="organ-hover-name">Femur</span>
+          <span class="organ-hover-system" id="organ-hover-system">Skeletal</span>
+        </div>
+
+        
+        <div class="organ-quick-bar" id="organ-quick-bar" role="toolbar" aria-label="Featured organs quick select">
+          
+        </div>
+
+        
+        <div class="controls-hint" id="controls-hint" aria-label="Interaction hints">
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg> Drag to rotate</span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4"/></svg> Scroll to zoom</span>
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Click to select</span>
+          <span>✋ Gesture control</span>
+        </div>
+
+        
+        <div id="gesture-panel" role="dialog" aria-modal="false" aria-label="Gesture control panel">
+          <div class="gesture-panel-header">
+            <div class="gesture-panel-title">
+              <span class="gesture-panel-title-icon">✋</span>
+              Gesture Control
+            </div>
+            <button class="gesture-panel-close" id="gesture-panel-close" aria-label="Close gesture panel">✕</button>
+          </div>
+
+          
+          <div class="gesture-feed-wrap">
+            <canvas id="gesture-feed-canvas" width="320" height="240" aria-label="Webcam feed with hand tracking"></canvas>
+            <div class="gesture-feed-overlay" aria-hidden="true">
+              <div class="gesture-feed-scan"></div>
+            </div>
+            <div class="gesture-feed-loading" id="gesture-feed-loading" aria-live="polite">
+              <div class="gesture-spinner"></div>
+              <span>Initialising camera...</span>
+            </div>
+          </div>
+
+          
+          <div class="gesture-help-trigger-row">
+            <button type="button" class="btn-help" id="gesture-help-btn">How to Use</button>
+          </div>
+
+          <div class="gesture-active-row" role="status" aria-live="polite">
+            <span class="gesture-active-title">Active Gesture</span>
+            <span id="gesture-active-label">· No gesture</span>
+          </div>
+
+          <div class="gesture-status-row">
+            <span class="gesture-status-badge gesture-status--idle" id="gesture-status-badge"></span>
+            <span id="gesture-status-text">Ready — click Gestures to start</span>
+          </div>
+
+          <div class="gesture-help-popup" id="gesture-help-popup" style="display: none;">
+            <div class="gesture-help-content">
+              <button type="button" class="gesture-help-close" id="gesture-help-close-btn">&times;</button>
+              <h3 class="gesture-help-title">Gesture Controls</h3>
+              <ul class="gesture-help-list">
+                <li>
+                  <span class="gesture-help-icon">☝️</span>
+                  <div class="gesture-help-text">
+                    <strong>Index Finger</strong>
+                    <span>Move pointer and select organs using dwell</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="gesture-help-icon">🤏</span>
+                  <div class="gesture-help-text">
+                    <strong>Thumb + Index</strong>
+                    <span>Zoom in and out</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="gesture-help-icon">✋</span>
+                  <div class="gesture-help-text">
+                    <strong>Open Palm</strong>
+                    <span>Rotate the 3D body</span>
+                  </div>
+                </li>
+              </ul>
+              <div class="gesture-help-tips">
+                <p>💡 Keep hand clearly visible inside the camera frame.</p>
+                <p>💡 Use slow and stable movements for better tracking.</p>
+                <p>💡 Active gesture and mode are shown below the camera preview.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        
+        <aside class="organ-info-panel" id="organ-info-panel" role="complementary" aria-label="Organ information" aria-hidden="true">
+          
+          <div class="oip-accent-bar" aria-hidden="true"></div>
+
+          
+          <div class="oip-header">
+            <div class="oip-header-content">
+              <div class="oip-emoji-wrap">
+                <span id="oip-emoji" aria-hidden="true">❤️</span>
+              </div>
+              <div class="oip-title-group">
+                <h2 class="oip-organ-name" id="oip-organ-name">Heart</h2>
+                <span class="oip-system-badge" id="oip-system-badge">Circulatory System</span>
+              </div>
+            </div>
+            <button class="oip-close-btn" id="oip-close-btn" aria-label="Close organ info panel">✕</button>
+          </div>
+
+          
+          <div class="oip-body">
+
+            
+            <p class="oip-tagline" id="oip-tagline">The body's tireless pump.</p>
+
+            
+            <div class="oip-stats" id="oip-stats" aria-label="Key statistics">
+              
+            </div>
+
+            
+            <div>
+              <h3 class="oip-section-title">How It Works</h3>
+              <p class="oip-description" id="oip-description"></p>
+            </div>
+
+            
+            <div>
+              <h3 class="oip-section-title">Key Functions</h3>
+              <ul class="oip-functions" id="oip-functions" aria-label="Key organ functions">
+                
+              </ul>
+            </div>
+
+            
+            <div class="oip-fact">
+              <div class="oip-fact-header">
+                <span aria-hidden="true">💡</span>
+                <span>Did You Know?</span>
+              </div>
+              <p id="oip-fun-fact"></p>
+            </div>
+
+
+
+          </div>
+        </aside>
+
+      </main>
+
+      
+      <aside class="explorer-sidebar right-sidebar" aria-label="Organ hierarchy and information">
+
+        
+        <div class="hierarchy-section">
+          <h3 class="sidebar-title">Organ Hierarchy</h3>
+          <div class="hierarchy-tree" id="hierarchy-tree" role="tree" aria-label="Organ hierarchy tree">
+            
+          </div>
+        </div>
+
+        
+        <div class="selected-info" id="selected-info">
+          <div class="selected-info-header">
+            <h4 class="selected-info-title" id="selected-organ-name">Select a structure</h4>
+            <div class="selected-info-badge" id="selected-organ-system">—</div>
+          </div>
+          <p class="selected-info-desc" id="selected-organ-desc">
+            Click any structure in the 3D view or the hierarchy tree to learn more.
+          </p>
+          <div class="selected-info-meta" id="selected-info-meta" style="display:none">
+            <div class="meta-row">
+              <span class="meta-label">Type</span>
+              <span class="meta-value" id="meta-type">—</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Location</span>
+              <span class="meta-value" id="meta-location">—</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Function</span>
+              <span class="meta-value" id="meta-function">—</span>
+            </div>
+          </div>
+        </div>
+
+        
+        <div class="system-stats-bar" id="system-stats-bar">
+          <div class="info-stats">
+            <div class="info-stat">
+              <span class="info-stat-value" id="info-stat1-value">—</span>
+              <span class="info-stat-label" id="info-stat1-label"></span>
+            </div>
+            <div class="info-stat">
+              <span class="info-stat-value" id="info-stat2-value">—</span>
+              <span class="info-stat-label" id="info-stat2-label"></span>
+            </div>
+          </div>
+        </div>
+
+        
+        <button class="btn-explore btn-full" id="start-quiz-btn" aria-label="Start anatomy quiz for current system">
+          Start Quiz →
+        </button>
+      </aside>
+    </div>
+
+  </section>
+
+  
+  <div class="quiz-modal-overlay" id="quiz-modal" role="dialog" aria-modal="true" aria-label="Anatomy quiz" aria-hidden="true">
+    <div class="modal-glass">
+      <div class="modal-header">
+        <h2 class="modal-title">Anatomy Quiz</h2>
+        <button class="modal-close" id="close-quiz-btn" aria-label="Close quiz">✕</button>
+      </div>
+      <div class="quiz-content" id="quiz-content">
+        
+      </div>
+    </div>
+  </div>
+
+  
+  <div id="school-auth-overlay" role="dialog" aria-modal="true" aria-label="School Platform Sign In"></div>
+
+  <div id="school-dashboard-overlay" aria-label="School Platform Dashboard"></div>
+
+  <div id="signin-modal" class="signin-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="signin-title">
+    <div class="signin-card">
+      <button class="signin-close-btn" id="signin-close-btn" aria-label="Close modal">✕</button>
+      
+      <div class="auth-tabs">
+        <button class="auth-tab-btn active" id="tab-signin-btn">Sign In</button>
+        <button class="auth-tab-btn" id="tab-signup-btn">Sign Up</button>
+      </div>
+
+      <form id="signin-form" novalidate>
+        <span class="success-msg" id="signin-success-msg" style="display: none;"></span>
+        <div class="form-group">
+          <label for="signin-email">Email Address</label>
+          <input type="email" id="signin-email" placeholder="name@company.com" required />
+          <span class="error-msg" id="signin-email-error"></span>
+        </div>
+        <div class="form-group">
+          <label for="signin-password">Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="signin-password" placeholder="••••••••" required />
+            <button type="button" class="btn-toggle-password" id="toggle-signin-pwd-btn" aria-label="Show password">👁️</button>
+          </div>
+          <span class="error-msg" id="signin-password-error"></span>
+        </div>
+        <button type="submit" class="btn-primary signin-submit-btn" id="signin-submit-btn">Sign In</button>
+      </form>
+
+      <form id="signup-form" style="display: none;" novalidate>
+        <div class="form-group">
+          <label for="signup-name">Full Name</label>
+          <input type="text" id="signup-name" placeholder="John Doe" required />
+          <span class="error-msg" id="signup-name-error"></span>
+        </div>
+        <div class="form-group">
+          <label for="signup-email">Email Address</label>
+          <input type="email" id="signup-email" placeholder="name@company.com" required />
+          <span class="error-msg" id="signup-email-error"></span>
+        </div>
+        <div class="form-group">
+          <label for="signup-password">Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="signup-password" placeholder="••••••••" required />
+            <button type="button" class="btn-toggle-password" id="toggle-signup-pwd-btn" aria-label="Show password">👁️</button>
+          </div>
+          <span class="error-msg" id="signup-password-error"></span>
+        </div>
+        <div class="form-group">
+          <label for="signup-confirm-password">Confirm Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="signup-confirm-password" placeholder="••••••••" required />
+            <button type="button" class="btn-toggle-password" id="toggle-signup-confpwd-btn" aria-label="Show password">👁️</button>
+          </div>
+          <span class="error-msg" id="signup-confirm-password-error"></span>
+        </div>
+        <button type="submit" class="btn-primary signin-submit-btn" id="signup-submit-btn">Create Account</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="loading-screen" id="loading-screen" role="status" aria-label="Loading BioVerse X">
+    <div class="loading-content">
+      <div class="loading-logo">
+        <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="40" cy="40" r="36" stroke="url(#loadGrad)" stroke-width="2" stroke-dasharray="8 4"/>
+          <circle cx="40" cy="40" r="24" stroke="url(#loadGrad)" stroke-width="1.5" opacity="0.6"/>
+          <circle cx="40" cy="40" r="8" fill="url(#loadGrad)"/>
+          <defs>
+            <linearGradient id="loadGrad" x1="4" y1="4" x2="76" y2="76">
+              <stop offset="0%" stop-color="#00d4ff"/>
+              <stop offset="100%" stop-color="#7b2fff"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <h1 class="loading-title">BioVerse <span class="logo-x">X</span></h1>
+      <div class="loading-bar-container" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="loading-progress">
+        <div class="loading-bar" id="loading-bar"></div>
+      </div>
+      <p class="loading-status" id="loading-status">Initializing neural render engine...</p>
+    </div>
+  </div>
+
+  <script src="js/model-manifest.js"></script>
+  <script src="js/organ-registry.js"></script>
+  <script src="js/anatomy-asset-system.js"></script>
+  <script src="js/glb-loader.js"></script>
+  <script src="js/camera-calibrator.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/anatomy-data.js"></script>
+  <script src="js/systems-data.js"></script>
+  <script src="js/explorer3d.js?v=debug123"></script>
+  <script src="js/model-manager.js"></script>
+  <script src="js/anatomy-manager.js"></script>
+  <script src="js/selection-manager.js"></script>
+  <script src="js/highlight-manager.js"></script>
+  <script src="js/info-panel.js"></script>
+  <script src="js/camera-manager.js"></script>
+  <script src="js/skeleton-viewer.js?v=2"></script>
+  <script src="js/organ-hierarchy.js?v=debug123"></script>
+  <script src="js/quiz.js"></script>
+  <script src="js/hero-viewer.js"></script>
+  <script src="js/navigation.js?v=auth-fix-v3"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/organ-focus.js?v=debug123"></script>
+  <script src="js/cinematic-nav.js?v=debug123"></script>
+  <script src="js/bio-animations-3d.js"></script>
+  <script src="js/gesture-controller.js"></script>
+
+  <script src="js/school-platform.js"></script>
+  <script src="js/app.js?v=auth-fix-v3"></script>
+</body>
+</html>

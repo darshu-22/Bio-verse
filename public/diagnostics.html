@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>BioVerse X — Skeleton.glb Diagnostics</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0a0e1a;color:#e2e8f0;font-family:'Courier New',monospace;font-size:13px;line-height:1.6}
+    #status{position:fixed;top:0;left:0;right:0;background:#1a2840;padding:12px 20px;font-size:14px;font-weight:bold;color:#00d4ff;z-index:999;border-bottom:1px solid #00d4ff44}
+    #report{max-width:900px;margin:60px auto 40px;padding:20px}
+    .section{margin-bottom:28px;border:1px solid #1e3a5f;border-radius:8px;overflow:hidden}
+    .section-header{background:#0d2035;padding:10px 16px;color:#00d4ff;font-size:13px;font-weight:bold;letter-spacing:.08em;border-bottom:1px solid #1e3a5f}
+    .section-body{padding:14px 16px}
+    .row{display:flex;gap:8px;margin-bottom:4px}
+    .lbl{color:#7ba3c8;min-width:220px;flex-shrink:0}
+    .val{color:#e2e8f0}
+    .val.ok{color:#4ade80}
+    .val.warn{color:#fbbf24}
+    .val.err{color:#f87171}
+    .val.info{color:#60a5fa}
+    .tree{font-family:'Courier New',monospace;white-space:pre;color:#a8d4ff;line-height:1.8;font-size:12px}
+    pre{background:#060d18;padding:12px;border-radius:4px;overflow-x:auto;color:#8ec8ff;font-size:11px}
+    canvas#diag-canvas{position:fixed;bottom:16px;right:16px;border:1px solid #1e3a5f;border-radius:6px;opacity:.35;pointer-events:none}
+    .score-bar{display:flex;align-items:center;gap:12px;margin-top:6px}
+    .bar-bg{flex:1;height:12px;background:#1e3a5f;border-radius:6px;overflow:hidden}
+    .bar-fill{height:100%;border-radius:6px;transition:width .5s}
+    .prob-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}
+    .prob-num{color:#00d4ff;font-weight:bold;min-width:24px}
+    .prob-txt{color:#e2e8f0}
+    .divider{border:none;border-top:1px solid #1e3a5f;margin:10px 0}
+  </style>
+</head>
+<body>
+<div id="status">Loading Skeleton.glb please wait...</div>
+<div id="report"><p style="color:#7ba3c8;padding:20px">Running diagnostics model loading in progress.</p></div>
+<canvas id="diag-canvas" width="200" height="300"></canvas>
+
+<script>
+'use strict';
+
+const miniCanvas = document.getElementById('diag-canvas');
+const miniScene  = new THREE.Scene();
+const miniCam    = new THREE.PerspectiveCamera(45, 200/300, 0.1, 500);
+miniCam.position.set(0, 0, 10);
+const miniRenderer = new THREE.WebGLRenderer({canvas: miniCanvas, antialias:true, alpha:true});
+miniRenderer.setPixelRatio(window.devicePixelRatio);
+miniRenderer.setClearColor(0x000000, 0);
+
+const miniAL = new THREE.AmbientLight(0xffffff, 1.5);
+const miniDL = new THREE.DirectionalLight(0x00d4ff, 2);
+miniDL.position.set(3, 6, 5);
+miniScene.add(miniAL, miniDL);
+const miniOrbit = new THREE.OrbitControls(miniCam, miniCanvas);
+miniOrbit.enablePan = false;
+miniOrbit.autoRotate = true;
+miniOrbit.autoRotateSpeed = 1.5;
+function miniLoop(){ requestAnimationFrame(miniLoop); miniOrbit.update(); miniRenderer.render(miniScene, miniCam); }
+miniLoop();
+
+const scene    = new THREE.Scene();
+const camera   = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 500);
+camera.position.set(0, 0, 22);
+const offCanvas = document.createElement('canvas');
+offCanvas.width = 800; offCanvas.height = 600;
+const renderer = new THREE.WebGLRenderer({canvas: offCanvas, antialias:true, alpha:true});
+renderer.setSize(800, 600);
+const pivot = new THREE.Group();
+scene.add(pivot);
+
+const controls = new THREE.OrbitControls(camera, offCanvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.enablePan     = false;
+controls.minDistance   = 4;
+controls.maxDistance   = 60;
+
+const loader = new THREE.GLTFLoader();
+const FILE_PATH = 'models/Skeleton.glb';
+const LOAD_START = performance.now();
+
+loader.load(
+  FILE_PATH,
+  (gltf) => {
+    const loadMs = (performance.now() - LOAD_START).toFixed(0);
+    document.getElementById('status').textContent = 'Skeleton.glb loaded in ' + loadMs + ' ms running analysis...';
+    runDiagnostics(gltf, loadMs);
+  },
+  (xhr) => {
+    if (xhr.total) {
+      const pct = ((xhr.loaded / xhr.total)*100).toFixed(1);
+      document.getElementById('status').textContent = 'Loading ' + pct + '%';
+    }
+  },
+  (err) => {
+    document.getElementById('status').textContent = 'LOAD FAILED: ' + err.message;
+    document.getElementById('report').innerHTML = '<div class="section"><div class="section-header">LOAD ERROR</div><div class="section-body"><div class="val err">' + err.message + '</div></div></div>';
+  }
+);
+
+function runDiagnostics(gltf, loadMs) {
+  const gltfScene = gltf.scene;
+
+  const miniClone = gltfScene.clone(true);
+  miniScene.add(miniClone);
+  const miniBox = new THREE.Box3().setFromObject(miniClone);
+  const miniSz  = miniBox.getSize(new THREE.Vector3());
+  const miniMaxDim = Math.max(miniSz.x, miniSz.y, miniSz.z);
+  if (miniMaxDim > 0) {
+    const s = 5 / miniMaxDim;
+    miniClone.scale.setScalar(s);
+    const mc = miniBox.getCenter(new THREE.Vector3()).multiplyScalar(s);
+    miniClone.position.sub(mc);
+  }
+  miniCam.position.set(0, 0, 8);
+  miniOrbit.target.set(0, 0, 0);
+  miniOrbit.update();
+
+  pivot.add(gltfScene);
+  gltfScene.updateMatrixWorld(true);
+
+  const allNodes = [];
+  gltfScene.traverse(n => allNodes.push(n));
+
+  const allMeshes  = allNodes.filter(n => n.isMesh || n.isSkinnedMesh);
+  const allLights  = allNodes.filter(n => n.isLight);
+  const allCameras = allNodes.filter(n => n.isCamera);
+  const emptyNodes = allNodes.filter(n => !n.isMesh && !n.isLight && !n.isCamera && n !== gltfScene && n.type === 'Object3D');
+  const groupNodes = allNodes.filter(n => n.type === 'Group');
+
+  const rawBox    = new THREE.Box3().setFromObject(gltfScene);
+  const rawSize   = rawBox.getSize(new THREE.Vector3());
+  const rawCenter = rawBox.getCenter(new THREE.Vector3());
+  const boundSphere = rawBox.getBoundingSphere(new THREE.Sphere());
+
+  let largestMesh = null, largestVerts = 0;
+  let smallestMesh = null, smallestVerts = Infinity;
+  let totalVerts = 0, totalTris = 0;
+  const hiddenMeshes = [];
+  const zeroScaleMeshes = [];
+  const negativeScaleMeshes = [];
+  const matSet = new Map();
+
+  allMeshes.forEach(m => {
+    const geo = m.geometry;
+    const vc  = geo && geo.attributes.position ? geo.attributes.position.count : 0;
+    const tc  = geo && geo.index ? geo.index.count / 3 : (vc / 3);
+    totalVerts += vc;
+    totalTris  += Math.round(tc);
+    if (vc > largestVerts)  { largestVerts = vc;  largestMesh  = m; }
+    if (vc < smallestVerts) { smallestVerts = vc; smallestMesh = m; }
+    if (!m.visible) hiddenMeshes.push(m);
+
+    const ws = new THREE.Vector3();
+    m.getWorldScale(ws);
+    if (ws.x === 0 || ws.y === 0 || ws.z === 0) zeroScaleMeshes.push(m);
+    if (ws.x < 0  || ws.y < 0  || ws.z < 0)  negativeScaleMeshes.push(m);
+
+    const mats = Array.isArray(m.material) ? m.material : [m.material];
+    mats.forEach(mat => { if (mat && !matSet.has(mat.uuid)) matSet.set(mat.uuid, {mat, mesh:m}); });
+  });
+
+  const firstMesh = allMeshes[0] || null;
+
+  const getTransform = (obj) => {
+    if (!obj) return null;
+    const wp = new THREE.Vector3(); obj.getWorldPosition(wp);
+    const ws = new THREE.Vector3(); obj.getWorldScale(ws);
+    const wq = new THREE.Quaternion(); obj.getWorldQuaternion(wq);
+    const we = new THREE.Euler(); we.setFromQuaternion(wq);
+    return {
+      pos:   obj.position.clone(),
+      rot:   obj.rotation,
+      scale: obj.scale.clone(),
+      worldPos: wp,
+      worldScale: ws,
+      worldRotEul: we
+    };
+  };
+
+  const sceneT      = getTransform(gltfScene);
+  const rootT       = getTransform(gltfScene.children[0] || gltfScene);
+  const firstMeshT  = getTransform(firstMesh);
+  const largestMeshT = getTransform(largestMesh);
+
+  const camPos    = camera.position.clone();
+  const camTarget = controls.target.clone();
+  const camDistToBox = camPos.distanceTo(rawCenter);
+
+  let largestWorldPos = new THREE.Vector3();
+  if (largestMesh) largestMesh.getWorldPosition(largestWorldPos);
+  const camDistToLargest = largestMesh ? camPos.distanceTo(largestWorldPos) : 0;
+
+  const fovRad         = (camera.fov * Math.PI / 180);
+  const minDistToFitY  = (rawSize.y / 2) / Math.tan(fovRad / 2);
+  const minDistToFitX  = (rawSize.x / 2) / Math.tan(fovRad / 2 * camera.aspect);
+  const requiredDist   = Math.max(minDistToFitY, minDistToFitX);
+  const fitsViewport   = camDistToBox >= requiredDist;
+
+  const ctrl     = controls;
+  const ctrlDist = camera.position.distanceTo(ctrl.target);
+
+  const hasHelpers   = allNodes.some(n => n.type && n.type.includes('Helper'));
+  const hasText      = allNodes.some(n => n.type === 'Sprite' || (n.name && n.name.toLowerCase().includes('text')));
+  const brokenParent = allMeshes.some(m => {
+    let p = m.parent;
+    while(p){ if(p === gltfScene || p === scene) return false; p = p.parent; }
+    return true;
+  });
+
+  let estimatedGPUMB = 0;
+  allMeshes.forEach(m => {
+    const geo = m.geometry;
+    if (!geo || !geo.attributes.position) return;
+    const vc = geo.attributes.position.count;
+    estimatedGPUMB += (vc * 32) / (1024*1024);
+    if (geo.index) estimatedGPUMB += (geo.index.count * 2) / (1024*1024);
+  });
+  let textureMB = 0;
+  matSet.forEach(function(entry){
+    const mat = entry.mat;
+    const texProps = ['map','normalMap','roughnessMap','metalnessMap','emissiveMap','aoMap'];
+    texProps.forEach(p => {
+      if (mat[p] && mat[p].image) {
+        const img = mat[p].image;
+        const w = img.width || 1024;
+        const h = img.height || 1024;
+        textureMB += (w * h * 4) / (1024*1024);
+      }
+    });
+  });
+  const totalVRAM = estimatedGPUMB + textureMB;
+  const drawCalls = matSet.size || allMeshes.length;
+  const estFPS    = totalTris < 200000 ? '60+' : totalTris < 500000 ? '30-60' : totalTris < 1500000 ? '15-30' : 'below 15';
+
+  let treeStr = '';
+  const printTree = (node, prefix, isLast, depth) => {
+    if (depth > 5) { if (node.children.length > 0) treeStr += prefix + '  ... (' + node.children.length + ' more)\n'; return; }
+    const connector = isLast ? 'L-- ' : '|-- ';
+    const typeTag = node.isMesh ? '[MESH]' : node.isSkinnedMesh ? '[SKINNED]' : node.type === 'Group' ? '[GROUP]' : node.isLight ? '[LIGHT]' : node.isCamera ? '[CAMERA]' : '[OBJ3D]';
+    const childInfo = ' ch:' + node.children.length;
+    treeStr += prefix + connector + (node.name || '(unnamed)') + ' ' + typeTag + childInfo + '\n';
+    const childPrefix = prefix + (isLast ? '    ' : '|   ');
+    node.children.forEach((c, i) => printTree(c, childPrefix, i === node.children.length-1, depth+1));
+  };
+  treeStr += 'Scene [Scene]  ch:' + gltfScene.children.length + '\n';
+  gltfScene.children.forEach((c, i) => printTree(c, '', i === gltfScene.children.length-1, 0));
+
+  const problems = [];
+  const maxDimM = Math.max(rawSize.x, rawSize.y, rawSize.z);
+  if (maxDimM > 50 || maxDimM < 0.1) problems.push({id:'scale', label:'Wrong Scale', detail: 'Max dimension ' + maxDimM.toFixed(3) + ' is outside expected range (1-10 units). Skeleton may appear too small or too large.'});
+  if (Math.abs(rawCenter.x) > 1 || Math.abs(rawCenter.y) > 2 || Math.abs(rawCenter.z) > 1) problems.push({id:'pivot', label:'Wrong Pivot / Center', detail:'Bounding box center is at (' + rawCenter.x.toFixed(2) + ', ' + rawCenter.y.toFixed(2) + ', ' + rawCenter.z.toFixed(2) + ') not at world origin. Model may appear off-center.'});
+  if (camDistToBox > requiredDist * 3) problems.push({id:'camera', label:'Wrong Camera Distance', detail:'Camera is ' + camDistToBox.toFixed(2) + ' units from model center. Minimum to fit model is ' + requiredDist.toFixed(2) + '. Camera is too far.'});
+  if (camDistToBox < requiredDist * 0.5) problems.push({id:'camera', label:'Camera Inside Model', detail:'Camera distance (' + camDistToBox.toFixed(2) + ') is much less than required fitting distance (' + requiredDist.toFixed(2) + '). Camera is inside the mesh.'});
+  if (!ctrl.target || (Math.abs(ctrl.target.x) < 0.01 && Math.abs(ctrl.target.y) < 0.01 && Math.abs(ctrl.target.z) < 0.01)) problems.push({id:'orbit', label:'Wrong Orbit Target', detail:'OrbitControls target is at origin (0,0,0). Model center Y is ' + rawCenter.y.toFixed(2) + '. Rotation will be off-axis.'});
+  if (emptyNodes.length > 0) problems.push({id:'empty', label:'Empty Object3D Nodes', detail: emptyNodes.length + ' empty Object3D nodes found in hierarchy. May be leftover Blender empties.'});
+  if (hiddenMeshes.length > 0) problems.push({id:'hidden', label:'Hidden Meshes', detail: hiddenMeshes.length + ' meshes have visible=false and will not render.'});
+  if (zeroScaleMeshes.length > 0) problems.push({id:'scale0', label:'Zero Scale Objects', detail: zeroScaleMeshes.length + ' objects have a world scale component of 0.'});
+  if (groupNodes.length > 10) problems.push({id:'nested', label:'Deeply Nested Groups', detail: groupNodes.length + ' Group nodes detected suggesting complex nesting that may cause matrix precision issues.'});
+  if (totalTris > 500000) problems.push({id:'perf', label:'High Triangle Count', detail: totalTris.toLocaleString() + ' triangles exceeds recommended 500k for smooth real-time rendering.'});
+
+  let health = 100;
+  problems.forEach(p => {
+    if (['camera','scale','pivot'].includes(p.id)) health -= 20;
+    else if (['orbit','empty','hidden'].includes(p.id)) health -= 10;
+    else health -= 5;
+  });
+  health = Math.max(0, Math.min(100, health));
+  const healthColor = health >= 75 ? '#4ade80' : health >= 50 ? '#fbbf24' : '#f87171';
+
+  const rd = (v, d) => { d = d || 3; return typeof v === 'number' ? v.toFixed(d) : '?'; };
+  const v3 = (v, d) => { d = d || 3; return '(' + rd(v.x,d) + ', ' + rd(v.y,d) + ', ' + rd(v.z,d) + ')'; };
+  const degOf = (r) => THREE.MathUtils.radToDeg(r).toFixed(2);
+
+  const row = (label, value, cls) => {
+    cls = cls || '';
+    return '<div class="row"><span class="lbl">' + label + '</span><span class="val ' + cls + '">' + value + '</span></div>';
+  };
+  const sec = (title, body) => '<div class="section"><div class="section-header">&#9658; ' + title + '</div><div class="section-body">' + body + '</div></div>';
+
+  const tRow = (t, label) => {
+    if (!t) return row(label, 'N/A', 'warn');
+    return '<div style="margin-bottom:10px;padding:8px;background:#060d18;border-radius:4px;border:1px solid #1e3a5f">'
+      + '<div style="color:#00d4ff;margin-bottom:6px;font-weight:bold">' + label + '</div>'
+      + row('Position (local)', v3(t.pos))
+      + row('Rotation (local deg)', 'X:' + degOf(t.rot.x) + ' Y:' + degOf(t.rot.y) + ' Z:' + degOf(t.rot.z))
+      + row('Scale (local)', v3(t.scale))
+      + row('World Position', v3(t.worldPos))
+      + row('World Scale', v3(t.worldScale))
+      + '</div>';
+  };
+
+  const FILE_BYTES = 162386908;
+  const FILE_MB    = (FILE_BYTES / 1024 / 1024).toFixed(1);
+
+  let matRows = '';
+  let mi = 0;
+  matSet.forEach(function(entry){
+    const mat  = entry.mat;
+    const col  = mat.color ? '#' + mat.color.getHexString() : 'N/A';
+    matRows += '<div style="margin-bottom:10px;padding:8px;background:#060d18;border-radius:4px;border:1px solid #1e3a5f">';
+    matRows += row('[' + (mi+1) + '] Name', mat.name || '(unnamed)');
+    matRows += row('Type', mat.type || 'Unknown');
+    matRows += row('Transparent', mat.transparent ? 'Yes' : 'No', mat.transparent ? 'warn' : 'ok');
+    matRows += row('Opacity', (mat.opacity != null ? mat.opacity : 1).toFixed(2));
+    matRows += row('Double Sided', mat.side === THREE.DoubleSide ? 'Yes' : 'No');
+    matRows += row('Color (hex)', '<span style="display:inline-block;width:12px;height:12px;background:' + col + ';border-radius:2px;margin-right:6px;vertical-align:middle"></span>' + col);
+    matRows += '</div>';
+    mi++;
+  });
+
+  const rootCause = problems.length === 0
+    ? 'No critical issues detected. Model appears correctly configured.'
+    : (problems.find(function(p){ return ['scale','camera','pivot'].includes(p.id); }) || problems[0]).detail;
+
+  const fixOrder = problems.length > 0
+    ? problems.map(function(p, i){ return '<div class="prob-item"><span class="prob-num">' + (i+1) + '.</span><span class="prob-txt">[' + p.label + '] ' + p.detail + '</span></div>'; }).join('')
+    : '<div class="val ok">No fixes required.</div>';
+
+  let reportHTML = '';
+
+  reportHTML += sec('SECTION 1 - MODEL INFORMATION',
+    row('GLB Loaded Successfully', 'YES', 'ok') +
+    row('File Path', FILE_PATH) +
+    row('File Size', FILE_MB + ' MB (' + FILE_BYTES.toLocaleString() + ' bytes)') +
+    row('Asset Version', (gltf.asset && gltf.asset.version) || 'N/A') +
+    row('Generator', (gltf.asset && gltf.asset.generator) || 'N/A') +
+    row('Load Time', loadMs + ' ms') +
+    row('Total Scenes in GLB', (gltf.scenes && gltf.scenes.length) || 1) +
+    row('Default Scene Name', gltfScene.name || '(unnamed / scene 0)')
+  );
+
+  reportHTML += sec('SECTION 2 - ROOT SCENE GRAPH',
+    row('Root Name', gltfScene.name || '(unnamed)') +
+    row('Root Type', gltfScene.type) +
+    row('Root Children Count', gltfScene.children.length) +
+    row('Total Nodes All Levels', allNodes.length) +
+    '<hr class="divider"/>' +
+    '<div style="margin-top:8px;font-size:11px;color:#7ba3c8;margin-bottom:4px">Hierarchy (max 5 levels deep):</div>' +
+    '<div class="tree">' + (treeStr || '(empty)') + '</div>'
+  );
+
+  reportHTML += sec('SECTION 3 - TRANSFORM REPORT',
+    tRow(sceneT, 'Scene (gltf.scene)') +
+    tRow(rootT, 'Root (first child of scene)') +
+    tRow(firstMeshT, 'First Mesh: "' + (firstMesh && firstMesh.name || 'N/A') + '"') +
+    tRow(largestMeshT, 'Largest Mesh: "' + (largestMesh && largestMesh.name || 'N/A') + '" (' + largestVerts.toLocaleString() + ' verts)')
+  );
+
+  reportHTML += sec('SECTION 4 - BOUNDING INFORMATION',
+    row('Bounding Box Min', v3(rawBox.min)) +
+    row('Bounding Box Max', v3(rawBox.max)) +
+    row('Center', v3(rawCenter)) +
+    row('Width  X', rawSize.x.toFixed(4) + ' units') +
+    row('Height Y', rawSize.y.toFixed(4) + ' units') +
+    row('Depth  Z', rawSize.z.toFixed(4) + ' units') +
+    row('Largest Dimension', maxDimM.toFixed(4) + ' units') +
+    row('Bounding Sphere Center', v3(boundSphere.center)) +
+    row('Bounding Sphere Radius', boundSphere.radius.toFixed(4) + ' units')
+  );
+
+  reportHTML += sec('SECTION 5 - CAMERA REPORT',
+    row('Camera Position', v3(camPos)) +
+    row('Camera Target OrbitCtrl', v3(camTarget)) +
+    row('Near Plane', camera.near) +
+    row('Far Plane', camera.far) +
+    row('FOV degrees', camera.fov + ' deg') +
+    row('Aspect Ratio', camera.aspect.toFixed(3)) +
+    row('Distance to BBox Center', camDistToBox.toFixed(3) + ' units') +
+    row('Distance to Largest Mesh', camDistToLargest.toFixed(3) + ' units') +
+    row('Required Dist to Fit Y', minDistToFitY.toFixed(3) + ' units') +
+    row('Required Dist to Fit X', minDistToFitX.toFixed(3) + ' units') +
+    row('Full Model Fits in Viewport', fitsViewport ? 'YES' : 'NO', fitsViewport ? 'ok' : 'err')
+  );
+
+  reportHTML += sec('SECTION 6 - ORBIT CONTROLS',
+    row('Controls Present', ctrl ? 'YES' : 'NO', ctrl ? 'ok' : 'err') +
+    row('Target', v3(ctrl.target)) +
+    row('Min Distance', ctrl.minDistance) +
+    row('Max Distance', ctrl.maxDistance) +
+    row('Current Distance', ctrlDist.toFixed(3) + ' units') +
+    row('Pan Enabled', ctrl.enablePan ? 'YES' : 'NO') +
+    row('Rotate Enabled', ctrl.enableRotate ? 'YES' : 'NO', 'ok') +
+    row('Zoom Enabled', ctrl.enableZoom ? 'YES' : 'NO', 'ok') +
+    row('Damping Enabled', ctrl.enableDamping ? 'YES' : 'NO', 'ok') +
+    row('Damping Factor', ctrl.dampingFactor)
+  );
+
+  reportHTML += sec('SECTION 7 - MESH ANALYSIS',
+    row('Total Mesh Count', allMeshes.length, allMeshes.length > 0 ? 'ok' : 'err') +
+    row('Largest Mesh', (largestMesh && largestMesh.name || 'N/A') + ' (' + largestVerts.toLocaleString() + ' vertices)') +
+    row('Largest Vertex Count', largestVerts.toLocaleString()) +
+    row('Smallest Mesh', (smallestMesh && smallestMesh.name || 'N/A') + ' (' + (smallestVerts === Infinity ? 0 : smallestVerts.toLocaleString()) + ' vertices)') +
+    row('Total Vertices', totalVerts.toLocaleString()) +
+    row('Total Triangles', totalTris.toLocaleString()) +
+    row('Hidden Meshes', hiddenMeshes.length > 0 ? hiddenMeshes.length + ' [' + hiddenMeshes.map(function(m){ return m.name || 'unnamed'; }).join(', ') + ']' : '0 none', hiddenMeshes.length > 0 ? 'warn' : 'ok') +
+    row('SkinnedMesh Count', allMeshes.filter(function(m){ return m.isSkinnedMesh; }).length) +
+    row('Unique Materials', matSet.size)
+  );
+
+  reportHTML += sec('SECTION 8 - MATERIAL REPORT', matRows || '<div class="val warn">No materials found.</div>');
+
+  reportHTML += sec('SECTION 9 - SCENE VALIDATION',
+    row('Empty Object3D Nodes', emptyNodes.length > 0 ? emptyNodes.length + ' found' : 'None', emptyNodes.length > 0 ? 'warn' : 'ok') +
+    row('Group Nodes', groupNodes.length) +
+    row('Helper Nodes', hasHelpers ? 'Found' : 'None', hasHelpers ? 'warn' : 'ok') +
+    row('Camera Objects in Model', allCameras.length > 0 ? allCameras.length + ' found' : 'None', allCameras.length > 0 ? 'warn' : 'ok') +
+    row('Light Objects in Model', allLights.length > 0 ? allLights.length + ' found' : 'None', allLights.length > 0 ? 'warn' : 'ok') +
+    row('Text Sprite Objects', hasText ? 'Found' : 'None', hasText ? 'warn' : 'ok') +
+    row('Invisible Hidden Meshes', hiddenMeshes.length > 0 ? hiddenMeshes.length + ' found' : 'None', hiddenMeshes.length > 0 ? 'warn' : 'ok') +
+    row('Zero Scale Objects', zeroScaleMeshes.length > 0 ? zeroScaleMeshes.length + ' found' : 'None', zeroScaleMeshes.length > 0 ? 'err' : 'ok') +
+    row('Negative Scale Objects', negativeScaleMeshes.length > 0 ? negativeScaleMeshes.length + ' found' : 'None', negativeScaleMeshes.length > 0 ? 'err' : 'ok') +
+    row('Broken Parent Hierarchy', brokenParent ? 'YES' : 'None', brokenParent ? 'err' : 'ok')
+  );
+
+  const diag10 = problems.length > 0
+    ? problems.map(function(p){ return '<div class="prob-item"><span class="prob-num">!</span><div><span style="color:#fbbf24;font-weight:bold">' + p.label + '</span> - ' + p.detail + '</div></div>'; }).join('')
+    : '<div class="val ok">No rendering problems detected.</div>';
+
+  reportHTML += sec('SECTION 10 - RENDERING DIAGNOSIS',
+    '<div style="margin-bottom:10px;color:#7ba3c8;font-size:12px">Issues detected that may explain incorrect rendering:</div>' +
+    diag10 +
+    '<hr class="divider"/>' +
+    row('Applicable Diagnoses', problems.map(function(p){ return p.label; }).join(' | ') || 'No issues found', problems.length ? 'warn' : 'ok')
+  );
+
+  reportHTML += sec('SECTION 11 - PERFORMANCE REPORT',
+    row('Estimated Geometry GPU Memory', estimatedGPUMB.toFixed(1) + ' MB') +
+    row('Estimated Texture VRAM', textureMB.toFixed(1) + ' MB') +
+    row('Estimated Total VRAM', totalVRAM.toFixed(1) + ' MB', totalVRAM > 500 ? 'err' : totalVRAM > 200 ? 'warn' : 'ok') +
+    row('Estimated Draw Calls', drawCalls, drawCalls > 500 ? 'err' : drawCalls > 100 ? 'warn' : 'ok') +
+    row('Estimated FPS', estFPS, estFPS === '60+' ? 'ok' : estFPS === '30-60' ? 'warn' : 'err') +
+    '<hr class="divider"/>' +
+    row('Suitable Desktop dedicated GPU', totalVRAM < 1000 ? 'YES' : 'MARGINAL', totalVRAM < 1000 ? 'ok' : 'warn') +
+    row('Suitable Laptop integrated GPU', totalVRAM < 400 ? 'YES' : 'CAUTION', totalVRAM < 400 ? 'ok' : 'warn') +
+    row('Suitable School Computers', totalTris < 300000 && totalVRAM < 200 ? 'YES' : 'CAUTION', totalTris < 300000 ? 'ok' : 'warn') +
+    row('Suitable Mobile', totalTris < 150000 && totalVRAM < 100 ? 'YES' : 'NO', totalTris < 150000 ? 'ok' : 'err')
+  );
+
+  reportHTML += sec('SECTION 12 - FINAL CONCLUSION',
+    '<div style="margin-bottom:12px">'
+    + '<div class="lbl" style="margin-bottom:6px">Current Health Score:</div>'
+    + '<div class="score-bar">'
+    + '<span style="font-size:22px;font-weight:bold;color:' + healthColor + '">' + health + '/100</span>'
+    + '<div class="bar-bg"><div class="bar-fill" style="width:' + health + '%;background:' + healthColor + '"></div></div>'
+    + '</div></div>'
+    + '<hr class="divider"/>'
+    + '<div style="color:#7ba3c8;margin-bottom:8px;font-weight:bold">Top ' + Math.min(10, problems.length) + ' Problems Detected:</div>'
+    + (problems.length > 0
+        ? problems.slice(0,10).map(function(p,i){ return '<div class="prob-item"><span class="prob-num">' + (i+1) + '.</span><span class="prob-txt"><span style="color:#f87171">[' + p.label + ']</span> ' + p.detail + '</span></div>'; }).join('')
+        : '<div class="val ok">No problems detected - model is healthy.</div>')
+    + '<hr class="divider"/>'
+    + '<div style="color:#7ba3c8;margin-bottom:6px;font-weight:bold">Root Cause:</div>'
+    + '<div style="color:#fbbf24;padding:10px;background:#1a1000;border-radius:4px;border:1px solid #fbbf2444;margin-bottom:12px">' + rootCause + '</div>'
+    + '<div style="color:#7ba3c8;margin-bottom:8px;font-weight:bold">Recommended Fix Order:</div>'
+    + fixOrder
+  );
+
+  document.getElementById('report').innerHTML = reportHTML;
+  document.getElementById('status').textContent = 'Diagnostics Complete - ' + allMeshes.length + ' meshes  ' + totalVerts.toLocaleString() + ' vertices  ' + totalTris.toLocaleString() + ' triangles  Health: ' + health + '/100';
+  document.getElementById('status').style.color = healthColor;
+}
+</script>
+</body>
+</html>

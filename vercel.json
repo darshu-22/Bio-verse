@@ -6,10 +6,18 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/server.js"
+      "source": "/api/:path*",
+      "destination": "/server.js"
+    },
+    {
+      "source": "/models/:path*",
+      "destination": "/server.js"
+    },
+    {
+      "source": "/((?!css|js|data|favicon\\.ico|.*\\.(?:css|js|json|png|jpg|jpeg|svg|ico|webp|glb)).*)",
+      "destination": "/index.html"
     }
   ]
 }
