@@ -155,43 +155,33 @@ app.post('/api/auth/signup', requireDB, async (req, res) => {
 app.post('/api/auth/signin', requireDB, async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log('AUTH_LOGIN_START');
 
     if (!email || !password) {
-      console.error('AUTH_LOGIN_ERROR: Email and password are required');
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
     const [users] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
-    console.log('AUTH_DB_QUERY_OK');
     if (users.length === 0) {
-      console.log('AUTH_USER_NOT_FOUND');
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
     const user = users[0];
-    console.log('AUTH_USER_FOUND');
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
-      console.log('AUTH_PASSWORD_INVALID');
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    console.log('AUTH_PASSWORD_OK');
     req.session.regenerate((err) => {
       if (err) {
         console.error('AUTH_SESSION_ERROR:', err.message);
         return res.status(500).json({ error: 'Sign in failed. Please try again.' });
       }
-      console.log('AUTH_SESSION_REGENERATE_OK');
       req.session.userId = user.id;
       req.session.save((err) => {
         if (err) {
           console.error('AUTH_SESSION_ERROR:', err.message);
           return res.status(500).json({ error: 'Sign in failed. Please try again.' });
         }
-        console.log('AUTH_SESSION_SAVE_OK');
-        console.log('AUTH_LOGIN_SUCCESS');
         res.status(200).json({ id: user.id, full_name: user.full_name, email: user.email });
       });
     });
