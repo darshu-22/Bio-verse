@@ -46,13 +46,22 @@ class SystemModelManager {
     this._ex     = explorer;
     this._loader = null;
 
-    
     this._cache = new Map();
 
-    
     this._activeScene    = null;
     this._activeSystem   = null;
     this._loadInProgress = false;
+
+    this._manifestData = null;
+    this._manifestPromise = fetch('/data/model-manifest.json')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        this._manifestData = data;
+        console.log('[SystemModelManager] Model manifest loaded.');
+      })
+      .catch(err => {
+        console.warn('[SystemModelManager] Manifest failed to load, falling back to local files.', err);
+      });
 
     this._ensureLoader();
     console.log('[SystemModelManager] Initialised.');
@@ -135,8 +144,20 @@ class SystemModelManager {
 
   
 
-  _fetchGLTF(url) {
-    const resolvedURL = new URL(url, location.href).href;
+  async _fetchGLTF(url) {
+    if (this._manifestPromise) {
+      try {
+        await this._manifestPromise;
+      } catch (e) {}
+    }
+
+    let targetURL = url;
+    if (this._manifestData && this._manifestData[url]) {
+      targetURL = this._manifestData[url];
+      console.log(`[SystemModelManager] Resolving ${url} via manifest to ${targetURL}`);
+    }
+
+    const resolvedURL = new URL(targetURL, location.href).href;
     console.log(`[SystemModelManager] Fetching: ${resolvedURL}`);
 
     let fakeTimer = null;
@@ -156,7 +177,7 @@ class SystemModelManager {
 
     return new Promise((resolve, reject) => {
       this._loader.load(
-        url,
+        targetURL,
         (gltf) => {
           clearInterval(fakeTimer);
           setProgress(100);

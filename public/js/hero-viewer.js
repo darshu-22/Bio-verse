@@ -70,7 +70,23 @@ function loadHeroModel() {
   }, 15000);
 
   const loader = new THREE.GLTFLoader();
-  loader.load(
+  const loadModelWithManifest = (loader, originalUrl, onLoad, onProgress, onError) => {
+    fetch('/data/model-manifest.json')
+      .then(res => res.ok ? res.json() : null)
+      .then(manifest => {
+        let url = originalUrl;
+        if (manifest && manifest[url]) {
+          url = manifest[url];
+        }
+        loader.load(url, onLoad, onProgress, onError);
+      })
+      .catch(() => {
+        loader.load(originalUrl, onLoad, onProgress, onError);
+      });
+  };
+
+  loadModelWithManifest(
+    loader,
     'models/muscle-hero.glb',
     (gltf) => {
       if (modelTimedOut) {

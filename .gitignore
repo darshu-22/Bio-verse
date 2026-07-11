@@ -18,3 +18,6 @@ ib_logfile*
 ibdata*
 mysql/data/
 db_test.js
+
+.vercel
+.env*

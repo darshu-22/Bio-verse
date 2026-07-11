@@ -1,0 +1,11 @@
+{
+  "models/cardiovascular.glb": "https://dggfqhqyjmxqlfhy.public.blob.vercel-storage.com/models/cardiovascular.glb",
+  "models/joints.glb": "https://dggfqhqyjmxqlfhy.public.blob.vercel-storage.com/models/joints.glb",
+  "models/lymphoid.glb": "https://dggfqhqyjmxqlfhy.public.blob.vercel-storage.com/models/lymphoid.glb",
+  "models/muscle-hero.glb": "https://dggfqhqyjmxqlfhy.public.blob.vercel-storage.com/models/muscle-hero.glb",
+  "models/muscular.glb": "https://dggfqhqyjmxqlfhy.public.blob.vercel-storage.com/models/muscular.glb",
+  "models/nervous.glb": "https://dggfqhqyjmxqlfhy.public.blob.vercel-storage.com/models/nervous.glb",
+  "models/regionsofhumanbody.glb": "https://dggfqhqyjmxqlfhy.public.blob.vercel-storage.com/models/regionsofhumanbody.glb",
+  "models/skeleton.glb": "https://dggfqhqyjmxqlfhy.public.blob.vercel-storage.com/models/skeleton.glb",
+  "models/visceral.glb": "https://dggfqhqyjmxqlfhy.public.blob.vercel-storage.com/models/visceral.glb"
+}

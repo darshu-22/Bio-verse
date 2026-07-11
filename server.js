@@ -36,22 +36,14 @@ const dbConfig = {
   ...(useSSL ? { ssl: { rejectUnauthorized: true } } : {})
 };
 
-let pool = null;
+const pool = mysql.createPool(dbConfig);
 let initPromise = null;
-
-function getPool() {
-  if (!pool) {
-    pool = mysql.createPool(dbConfig);
-  }
-  return pool;
-}
 
 async function initSchema() {
   if (initPromise) return initPromise;
   initPromise = (async () => {
     try {
-      const p = getPool();
-      await p.query(`
+      await pool.query(`
         CREATE TABLE IF NOT EXISTS users (
           id INT AUTO_INCREMENT PRIMARY KEY,
           full_name VARCHAR(255) NOT NULL,
@@ -69,13 +61,7 @@ async function initSchema() {
   return initPromise;
 }
 
-const sessionStoreConfig = {
-  host: dbConfig.host,
-  user: dbConfig.user,
-  password: dbConfig.password,
-  database: dbConfig.database,
-  port: dbConfig.port,
-  ...(useSSL ? { ssl: { rejectUnauthorized: true } } : {}),
+const sessionStore = new MySQLStore({
   createDatabaseTable: true,
   schema: {
     tableName: 'sessions',
@@ -85,9 +71,7 @@ const sessionStoreConfig = {
       data: 'data'
     }
   }
-};
-
-const sessionStore = new MySQLStore(sessionStoreConfig);
+}, pool);
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'bioverse_dev_secret',
@@ -131,14 +115,13 @@ app.post('/api/auth/signup', requireDB, async (req, res) => {
       return res.status(400).json({ error: 'Passwords do not match' });
     }
 
-    const p = getPool();
-    const [existing] = await p.execute('SELECT id FROM users WHERE email = ?', [email]);
+    const [existing] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
     if (existing.length > 0) {
       return res.status(400).json({ error: 'Email is already registered' });
     }
 
     const password_hash = await bcrypt.hash(password, 10);
-    const [result] = await p.execute(
+    const [result] = await pool.execute(
       'INSERT INTO users (full_name, email, password_hash) VALUES (?, ?, ?)',
       [full_name, email, password_hash]
     );
@@ -159,8 +142,7 @@ app.post('/api/auth/signin', requireDB, async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const p = getPool();
-    const [users] = await p.execute('SELECT * FROM users WHERE email = ?', [email]);
+    const [users] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
     if (users.length === 0) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
@@ -191,8 +173,7 @@ app.get('/api/auth/me', async (req, res) => {
       return res.status(503).json({ error: 'Database temporarily unavailable' });
     }
 
-    const p = getPool();
-    const [users] = await p.execute(
+    const [users] = await pool.execute(
       'SELECT id, full_name, email FROM users WHERE id = ?',
       [req.session.userId]
     );
