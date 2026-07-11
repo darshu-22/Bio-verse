@@ -1,0 +1,600 @@
+{
+  "systems": {
+    "skeletal": {
+      "id": "skeletal",
+      "displayName": "Skeletal System",
+      "description": "The skeletal system provides structural support and protection for vital organs, enables movement through joints and muscles, and produces blood cells within bone marrow.",
+      "color": "#d4d4d8",
+      "icon": "🦴"
+    },
+    "cardiovascular": {
+      "id": "cardiovascular",
+      "displayName": "Cardiovascular System",
+      "description": "The cardiovascular system is the body's transport network, pumping oxygenated blood to every cell and returning deoxygenated blood to the lungs.",
+      "color": "#ef4444",
+      "icon": "❤️"
+    },
+    "respiratory": {
+      "id": "respiratory",
+      "displayName": "Respiratory System",
+      "description": "The respiratory system facilitates the essential exchange of oxygen and carbon dioxide between the body and the environment.",
+      "color": "#22d3ee",
+      "icon": "🫁"
+    },
+    "digestive": {
+      "id": "digestive",
+      "displayName": "Digestive System",
+      "description": "The digestive system breaks down food into nutrients, absorbs them into the bloodstream, and eliminates waste along the GI tract.",
+      "color": "#f59e0b",
+      "icon": "🫀"
+    },
+    "nervous": {
+      "id": "nervous",
+      "displayName": "Nervous System",
+      "description": "The nervous system is the body's command center, processing sensory information and coordinating responses through electrical and chemical signals.",
+      "color": "#a855f7",
+      "icon": "🧠"
+    },
+    "urinary": {
+      "id": "urinary",
+      "displayName": "Urinary System",
+      "description": "The urinary system filters waste products from the blood, regulates blood volume and pressure, and controls levels of electrolytes and metabolites.",
+      "color": "#10b981",
+      "icon": "🧪"
+    },
+    "sensory": {
+      "id": "sensory",
+      "displayName": "Sensory System",
+      "description": "The sensory system processes environmental stimuli through specialized receptors, transmitting sight, sound, smell, taste, and touch data to the brain.",
+      "color": "#ec4899",
+      "icon": "👁️"
+    }
+  },
+  "organs": {
+    "skeleton": {
+      "id": "skeleton",
+      "system": "skeletal",
+      "displayName": "Human Skeleton",
+      "scientificName": "Systema sceletale",
+      "description": "The complete framework of bones and cartilage that protects organs and allows movement.",
+      "function": "Provides structural support, protects internal organs, acts as levers for muscles, and stores minerals.",
+      "location": "Throughout the entire human body.",
+      "interestingFacts": [
+        "Babies are born with around 270 bones, which fuse to 206 by adulthood.",
+        "Bone is dynamic, living tissue that completely remodels itself every 10 years."
+      ],
+      "commonDiseases": [
+        "Osteoporosis",
+        "Osteoarthritis",
+        "Scoliosis"
+      ],
+      "relatedOrgans": [
+        "skull",
+        "spine",
+        "ribcage"
+      ],
+      "searchKeywords": [
+        "bones",
+        "skeletal",
+        "framework",
+        "joints",
+        "calcium"
+      ],
+      "animations": [],
+      "quizTags": [
+        "skeletal",
+        "bones",
+        "structural"
+      ],
+      "aiEnabled": true,
+      "gestureSelectable": true
+    },
+    "skull": {
+      "id": "skull",
+      "system": "skeletal",
+      "displayName": "Skull",
+      "scientificName": "Cranium",
+      "description": "A bony structure that forms the head in vertebrates, supporting the structures of the face and providing a protective cavity for the brain.",
+      "function": "Protects the brain, houses sensory organs for vision, hearing, smell, and taste, and provides attachment points for facial muscles.",
+      "location": "Superior end of the vertebral column.",
+      "interestingFacts": [
+        "The skull consists of 22 bones, divided into 8 cranial bones and 14 facial skeleton bones.",
+        "The mandible is the only bone in the skull that is fully movable."
+      ],
+      "commonDiseases": [
+        "Craniosynostosis",
+        "Skull fractures",
+        "Temporomandibular joint disorder"
+      ],
+      "relatedOrgans": [
+        "brain",
+        "spine",
+        "eye",
+        "ear"
+      ],
+      "searchKeywords": [
+        "head",
+        "cranium",
+        "mandible",
+        "jaw",
+        "face"
+      ],
+      "animations": [],
+      "quizTags": [
+        "skeletal",
+        "head",
+        "cranial"
+      ],
+      "aiEnabled": true,
+      "gestureSelectable": true
+    },
+    "spine": {
+      "id": "spine",
+      "system": "skeletal",
+      "displayName": "Spine",
+      "scientificName": "Columna vertebralis",
+      "description": "The central axis of the skeleton, consisting of a flexible column of vertebrae.",
+      "function": "Protects the spinal cord, supports the weight of the head and torso, and allows for flexible body movements.",
+      "location": "Dorsal midline of the body, extending from the base of the skull to the pelvis.",
+      "interestingFacts": [
+        "The human spine contains 33 vertebrae at birth, which fuse to form 26 bones in adulthood.",
+        "Humans and giraffes have the exact same number of cervical vertebrae in their necks."
+      ],
+      "commonDiseases": [
+        "Herniated disc",
+        "Spinal stenosis",
+        "Scoliosis",
+        "Degenerative disc disease"
+      ],
+      "relatedOrgans": [
+        "skeleton",
+        "skull",
+        "ribcage"
+      ],
+      "searchKeywords": [
+        "vertebrae",
+        "backbone",
+        "spinal column",
+        "cervical",
+        "lumbar"
+      ],
+      "animations": [],
+      "quizTags": [
+        "skeletal",
+        "back",
+        "vertebral"
+      ],
+      "aiEnabled": true,
+      "gestureSelectable": true
+    },
+    "ribcage": {
+      "id": "ribcage",
+      "system": "skeletal",
+      "displayName": "Rib Cage",
+      "scientificName": "Cavea thoracis",
+      "description": "An arrangement of bones in the thorax formed by the sternum and ribs.",
+      "function": "Protects the lungs, heart, and major blood vessels, and assists in respiration by expanding and contracting.",
+      "location": "Thoracic region of the body, surrounding the chest cavity.",
+      "interestingFacts": [
+        "Most humans have 12 pairs of ribs, but some individuals are born with an extra cervical rib.",
+        "The first seven pairs of ribs are called 'true ribs' because they connect directly to the sternum."
+      ],
+      "commonDiseases": [
+        "Rib fractures",
+        "Costochondritis",
+        "Flail chest"
+      ],
+      "relatedOrgans": [
+        "lungs",
+        "heart",
+        "spine"
+      ],
+      "searchKeywords": [
+        "ribs",
+        "sternum",
+        "chest",
+        "thorax",
+        "protection"
+      ],
+      "animations": [
+        "breathe"
+      ],
+      "quizTags": [
+        "skeletal",
+        "chest",
+        "thoracic"
+      ],
+      "aiEnabled": true,
+      "gestureSelectable": true
+    },
+    "heart": {
+      "id": "heart",
+      "system": "cardiovascular",
+      "displayName": "Heart",
+      "scientificName": "Cor",
+      "description": "A hollow muscular organ that pumps blood through the circulatory system.",
+      "function": "Pumps oxygenated blood containing oxygen and nutrients to tissues and organs, and returns deoxygenated blood to the lungs.",
+      "location": "Thoracic cavity, left-central chest area between the lungs.",
+      "interestingFacts": [
+        "The heart beats approximately 100,000 times a day, circulating about 7,500 liters of blood.",
+        "Heart cells cease dividing shortly after birth, meaning the heart has extremely limited self-repair capabilities."
+      ],
+      "commonDiseases": [
+        "Coronary artery disease",
+        "Myocardial infarction",
+        "Arrhythmia",
+        "Heart failure"
+      ],
+      "relatedOrgans": [
+        "lungs",
+        "kidneys"
+      ],
+      "searchKeywords": [
+        "cardiac",
+        "pump",
+        "blood",
+        "artery",
+        "ventricle"
+      ],
+      "animations": [
+        "heartbeat"
+      ],
+      "quizTags": [
+        "cardiovascular",
+        "circulatory",
+        "pump"
+      ],
+      "aiEnabled": true,
+      "gestureSelectable": true
+    },
+    "lungs": {
+      "id": "lungs",
+      "system": "respiratory",
+      "displayName": "Lungs",
+      "scientificName": "Pulmones",
+      "description": "A pair of spongy, air-filled organs located on either side of the chest.",
+      "function": "Extracts oxygen from the atmosphere into the bloodstream and releases carbon dioxide from the bloodstream into the atmosphere.",
+      "location": "Thoracic cavity, protected by the rib cage.",
+      "interestingFacts": [
+        "The left lung is slightly smaller than the right lung to make room for the heart.",
+        "Lungs contain over 300 to 500 million tiny air sacs called alveoli."
+      ],
+      "commonDiseases": [
+        "Asthma",
+        "Pneumonia",
+        "Chronic obstructive pulmonary disease",
+        "Tuberculosis"
+      ],
+      "relatedOrgans": [
+        "heart",
+        "ribcage"
+      ],
+      "searchKeywords": [
+        "breathing",
+        "respiration",
+        "oxygen",
+        "alveoli",
+        "air"
+      ],
+      "animations": [
+        "breathe"
+      ],
+      "quizTags": [
+        "respiratory",
+        "breathing",
+        "pulmonary"
+      ],
+      "aiEnabled": true,
+      "gestureSelectable": true
+    },
+    "liver": {
+      "id": "liver",
+      "system": "digestive",
+      "displayName": "Liver",
+      "scientificName": "Hepar",
+      "description": "A large, lobed glandular organ in the abdomen, involved in many metabolic processes.",
+      "function": "Filters blood coming from the digestive tract, detoxifies chemicals, metabolizes drugs, and secretes bile that ends up in the intestines.",
+      "location": "Right upper quadrant of the abdomen, below the diaphragm.",
+      "interestingFacts": [
+        "The liver is the only visceral organ that possesses the remarkable ability to regenerate itself completely from as little as 25% of its original tissue.",
+        "It performs more than 500 distinct functions vital to survival."
+      ],
+      "commonDiseases": [
+        "Hepatitis",
+        "Cirrhosis",
+        "Fatty liver disease",
+        "Liver cancer"
+      ],
+      "relatedOrgans": [
+        "stomach",
+        "gallbladder",
+        "pancreas"
+      ],
+      "searchKeywords": [
+        "hepatic",
+        "bile",
+        "detox",
+        "metabolism",
+        "filter"
+      ],
+      "animations": [],
+      "quizTags": [
+        "digestive",
+        "metabolic",
+        "filtering"
+      ],
+      "aiEnabled": true,
+      "gestureSelectable": true
+    },
+    "stomach": {
+      "id": "stomach",
+      "system": "digestive",
+      "displayName": "Stomach",
+      "scientificName": "Gaster",
+      "description": "A muscular, elastic organ that digests food mechanically and chemically.",
+      "function": "Stores swallowed food, mixes it with hydrochloric acid and digestive enzymes to break down proteins, and passes the semi-liquid chyme to the small intestine.",
+      "location": "Upper left quadrant of the abdomen, superior to the small intestine.",
+      "interestingFacts": [
+        "The stomach produces a new mucus lining every two weeks to prevent its highly acidic digestive juices from dissolving itself.",
+        "It can expand to hold up to 4 liters of food and liquid."
+      ],
+      "commonDiseases": [
+        "Gastroesophageal reflux disease",
+        "Gastritis",
+        "Peptic ulcers",
+        "Gastroenteritis"
+      ],
+      "relatedOrgans": [
+        "esophagus",
+        "small_intestine",
+        "liver"
+      ],
+      "searchKeywords": [
+        "acid",
+        "digestion",
+        "gastric",
+        "pepsin",
+        "chyme"
+      ],
+      "animations": [],
+      "quizTags": [
+        "digestive",
+        "chemical",
+        "gastrointestinal"
+      ],
+      "aiEnabled": true,
+      "gestureSelectable": true
+    },
+    "small_intestine": {
+      "id": "small_intestine",
+      "system": "digestive",
+      "displayName": "Small Intestine",
+      "scientificName": "Intestinum tenue",
+      "description": "A long, narrow, folded tube connecting the stomach to the large intestine.",
+      "function": "Performs 90% of chemical digestion and absorbs nutrients, minerals, and water from food into the bloodstream.",
+      "location": "Central and lower abdominal cavity, framed by the large intestine.",
+      "interestingFacts": [
+        "Despite being called 'small' due to its narrow width, it is about 6 meters long, which is three times the length of the large intestine.",
+        "The interior wall is lined with millions of microscopic projections called villi, increasing the surface area for absorption."
+      ],
+      "commonDiseases": [
+        "Celiac disease",
+        "Crohn's disease",
+        "Irritable bowel syndrome",
+        "Intestinal obstruction"
+      ],
+      "relatedOrgans": [
+        "stomach",
+        "large_intestine",
+        "liver"
+      ],
+      "searchKeywords": [
+        "duodenum",
+        "jejunum",
+        "ileum",
+        "absorption",
+        "gut"
+      ],
+      "animations": [],
+      "quizTags": [
+        "digestive",
+        "absorption",
+        "gastrointestinal"
+      ],
+      "aiEnabled": true,
+      "gestureSelectable": true
+    },
+    "large_intestine": {
+      "id": "large_intestine",
+      "system": "digestive",
+      "displayName": "Large Intestine",
+      "scientificName": "Intestinum crassum",
+      "description": "The final section of the gastrointestinal tract, wider than the small intestine.",
+      "function": "Absorbs water and mineral salts from indigestible food residue, processes waste using gut bacteria, and stores feces prior to elimination.",
+      "location": "Loops around the perimeter of the small intestine in the abdominal cavity.",
+      "interestingFacts": [
+        "It houses trillions of beneficial bacteria, collectively called the gut microbiome, which weigh up to 2 kilograms.",
+        "The appendix, attached to the beginning of the large intestine, acts as a safe house for good bacteria."
+      ],
+      "commonDiseases": [
+        "Ulcerative colitis",
+        "Diverticulitis",
+        "Appendicitis",
+        "Colorectal cancer"
+      ],
+      "relatedOrgans": [
+        "small_intestine",
+        "stomach"
+      ],
+      "searchKeywords": [
+        "colon",
+        "rectum",
+        "cecum",
+        "microbiome",
+        "feces"
+      ],
+      "animations": [],
+      "quizTags": [
+        "digestive",
+        "gastrointestinal",
+        "waste"
+      ],
+      "aiEnabled": true,
+      "gestureSelectable": true
+    },
+    "brain": {
+      "id": "brain",
+      "system": "nervous",
+      "displayName": "Brain",
+      "scientificName": "Cerebrum",
+      "description": "The complex control center of the nervous system, enclosed within the skull.",
+      "function": "Controls thoughts, memory, speech, motor function, emotion, and regulates vital automatic body systems and homeostasis.",
+      "location": "Cranial cavity of the skull, superior to the spinal cord.",
+      "interestingFacts": [
+        "The brain consumes about 20% of the body's total energy budget, despite making up only 2% of the body's weight.",
+        "Information travels along cranial nerves at speeds of up to 430 kilometers per hour."
+      ],
+      "commonDiseases": [
+        "Alzheimer's disease",
+        "Stroke",
+        "Epilepsy",
+        "Parkinson's disease"
+      ],
+      "relatedOrgans": [
+        "skull",
+        "eye",
+        "ear"
+      ],
+      "searchKeywords": [
+        "neurons",
+        "mind",
+        "cerebrum",
+        "cerebellum",
+        "cortex"
+      ],
+      "animations": [
+        "pulse"
+      ],
+      "quizTags": [
+        "nervous",
+        "cognitive",
+        "control"
+      ],
+      "aiEnabled": true,
+      "gestureSelectable": true
+    },
+    "kidneys": {
+      "id": "kidneys",
+      "system": "urinary",
+      "displayName": "Kidneys",
+      "scientificName": "Renes",
+      "description": "A pair of bean-shaped organs that filter blood to produce urine.",
+      "function": "Filter waste products and excess fluid from blood, regulate systemic blood pressure, maintain electrolyte balance, and stimulate red blood cell production.",
+      "location": "Retroperitoneal space, on either side of the spine below the rib cage.",
+      "interestingFacts": [
+        "Each kidney contains about one million filtering units called nephrons.",
+        "If you lose one kidney, the remaining one will increase in size by 50% to take over the workload."
+      ],
+      "commonDiseases": [
+        "Chronic kidney disease",
+        "Kidney stones",
+        "Glomerulonephritis",
+        "Polycystic kidney disease"
+      ],
+      "relatedOrgans": [
+        "heart"
+      ],
+      "searchKeywords": [
+        "renal",
+        "nephron",
+        "filtration",
+        "urine",
+        "electrolytes"
+      ],
+      "animations": [],
+      "quizTags": [
+        "urinary",
+        "filtration",
+        "homeostasis"
+      ],
+      "aiEnabled": true,
+      "gestureSelectable": true
+    },
+    "eye": {
+      "id": "eye",
+      "system": "sensory",
+      "displayName": "Eye",
+      "scientificName": "Oculus",
+      "description": "The primary sensory organ of the visual system.",
+      "function": "Detects light stimuli, converts it into electro-chemical signals, and transmits this data through the optic nerve to the brain for visual processing.",
+      "location": "Orbital cavities of the skull facial skeleton.",
+      "interestingFacts": [
+        "The human eye can distinguish approximately 10 million distinct colors.",
+        "The cornea is the only tissue in the human body that contains no blood vessels; it receives oxygen directly from the air."
+      ],
+      "commonDiseases": [
+        "Cataracts",
+        "Glaucoma",
+        "Macular degeneration",
+        "Myopia"
+      ],
+      "relatedOrgans": [
+        "brain",
+        "skull"
+      ],
+      "searchKeywords": [
+        "vision",
+        "sight",
+        "retina",
+        "cornea",
+        "pupil"
+      ],
+      "animations": [],
+      "quizTags": [
+        "sensory",
+        "vision",
+        "ocular"
+      ],
+      "aiEnabled": true,
+      "gestureSelectable": true
+    },
+    "ear": {
+      "id": "ear",
+      "system": "sensory",
+      "displayName": "Ear",
+      "scientificName": "Auris",
+      "description": "The organ of hearing and equilibrium (balance) in vertebrates.",
+      "function": "Converts acoustic sound waves into nerve impulses, and senses changes in body position to coordinate physical balance and orientation.",
+      "location": "Lateral sides of the skull, housed within the temporal bones.",
+      "interestingFacts": [
+        "The smallest bone in the human body, the stapes (stirrup), is located in the middle ear and is only 3 millimeters long.",
+        "Your ears never stop hearing, even when you are asleep; the brain simply filters out environmental sound signals."
+      ],
+      "commonDiseases": [
+        "Otitis media",
+        "Tinnitus",
+        "Meniere's disease",
+        "Conductive hearing loss"
+      ],
+      "relatedOrgans": [
+        "brain",
+        "skull"
+      ],
+      "searchKeywords": [
+        "hearing",
+        "acoustic",
+        "cochlea",
+        "balance",
+        "vestibular"
+      ],
+      "animations": [],
+      "quizTags": [
+        "sensory",
+        "auditory",
+        "balance"
+      ],
+      "aiEnabled": true,
+      "gestureSelectable": true
+    }
+  }
+}

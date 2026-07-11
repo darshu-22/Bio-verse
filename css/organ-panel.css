@@ -1,0 +1,483 @@
+
+
+
+
+
+.organ-quick-bar {
+  position: absolute;
+  bottom: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(4, 10, 20, 0.80);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 40px;
+  z-index: 12;
+  pointer-events: all;
+}
+
+.organ-quick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 12px;
+  border-radius: 24px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  min-width: 56px;
+}
+
+.organ-quick-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--organ-color, #00d4ff), transparent) border-box;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.organ-quick-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-3px) scale(1.05);
+}
+
+.organ-quick-btn:hover::before,
+.organ-quick-btn.active::before {
+  opacity: 1;
+}
+
+.organ-quick-btn.active {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px -4px var(--organ-color, #00d4ff);
+}
+
+.oqb-emoji {
+  font-size: 20px;
+  line-height: 1;
+  display: block;
+}
+
+.oqb-name {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.organ-quick-btn:hover .oqb-name,
+.organ-quick-btn.active .oqb-name {
+  color: var(--organ-color, #00d4ff);
+}
+
+
+.organ-info-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 360px;
+  height: 100%;
+  background: rgba(4, 8, 18, 0.90);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  flex-direction: column;
+  z-index: 18;
+  transform: translateX(100%);
+  transition: transform 0.42s cubic-bezier(0.34, 1.20, 0.64, 1);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.organ-info-panel.visible {
+  transform: translateX(0);
+  pointer-events: all;
+}
+
+
+.oip-accent-bar {
+  height: 3px;
+  width: 100%;
+  background: var(--panel-gradient, linear-gradient(90deg, #ef4444, #7b2fff));
+  flex-shrink: 0;
+  transition: background 0.4s ease;
+}
+
+
+.oip-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 20px 16px;
+  flex-shrink: 0;
+}
+
+.oip-header-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.oip-emoji-wrap {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-color-alpha, rgba(239, 68, 68, 0.15));
+  border: 1px solid var(--panel-color-border, rgba(239, 68, 68, 0.30));
+  flex-shrink: 0;
+  transition: background 0.4s ease, border-color 0.4s ease;
+  font-size: 28px;
+}
+
+.oip-title-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.oip-organ-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.oip-system-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 10px;
+  border-radius: 20px;
+  background: var(--panel-color-alpha, rgba(239, 68, 68, 0.15));
+  color: var(--panel-color, #ef4444);
+  border: 1px solid var(--panel-color-border, rgba(239, 68, 68, 0.25));
+  transition: background 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+}
+
+.oip-close-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  color: var(--text-tertiary);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+  margin-left: 10px;
+  margin-top: 2px;
+}
+.oip-close-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--text-primary);
+  transform: rotate(90deg);
+}
+
+
+.oip-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px 24px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.08) transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.oip-body::-webkit-scrollbar { width: 4px; }
+.oip-body::-webkit-scrollbar-track { background: transparent; }
+.oip-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.10); border-radius: 2px; }
+
+
+.oip-tagline {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--text-tertiary);
+  line-height: 1.55;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin: 0;
+}
+
+
+.oip-stats {
+  display: flex;
+  gap: 8px;
+}
+
+.oip-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 12px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  gap: 2px;
+  transition: border-color 0.3s ease;
+}
+
+.oip-stat:hover {
+  border-color: var(--panel-color-border, rgba(239, 68, 68, 0.25));
+}
+
+.oip-stat-icon {
+  font-size: 16px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.oip-stat-value {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--panel-color, #ef4444);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  transition: color 0.3s ease;
+}
+
+.oip-stat-label {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+}
+
+
+.oip-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin: 0 0 8px;
+}
+
+.oip-description {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.70;
+  margin: 0;
+}
+
+
+.oip-functions {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.oip-functions li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.oip-functions li::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--panel-color, #ef4444);
+  flex-shrink: 0;
+  margin-top: 6px;
+  transition: background 0.3s ease;
+}
+
+
+.oip-fact {
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-left: 3px solid var(--panel-color, #ef4444);
+  border-radius: 0 10px 10px 0;
+  transition: border-color 0.3s ease;
+}
+
+.oip-fact-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--panel-color, #ef4444);
+  margin-bottom: 6px;
+  transition: color 0.3s ease;
+}
+
+.oip-fact p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0;
+  font-style: italic;
+}
+
+
+
+
+.organ-halo-ring {
+  
+}
+
+
+.organ-info-panel.visible ~ .explorer-main canvas {
+  
+}
+
+
+.organ-info-panel.visible .oip-stat {
+  animation: oipSlideUp 0.35s ease both;
+}
+.organ-info-panel.visible .oip-stat:nth-child(1) { animation-delay: 0.10s; }
+.organ-info-panel.visible .oip-stat:nth-child(2) { animation-delay: 0.16s; }
+.organ-info-panel.visible .oip-stat:nth-child(3) { animation-delay: 0.22s; }
+
+@keyframes oipSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+@media (max-width: 900px) {
+  .organ-info-panel {
+    width: 100%;
+    height: 55%;
+    top: auto;
+    bottom: 0;
+    right: 0;
+    transform: translateY(100%);
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 16px 16px 0 0;
+  }
+  .organ-info-panel.visible {
+    transform: translateY(0);
+  }
+  .organ-quick-bar {
+    gap: 4px;
+    padding: 6px 10px;
+    bottom: 48px;
+  }
+  .organ-quick-btn {
+    min-width: 44px;
+    padding: 6px 8px;
+  }
+  .oqb-emoji { font-size: 16px; }
+  .oqb-name { display: none; }
+}
+
+
+.organ-info-panel .btn-primary,
+.organ-info-panel .btn-explore {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--panel-color, #ef4444), #7b2fff);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  letter-spacing: 0.02em;
+  transition: opacity 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+.organ-info-panel .btn-primary:hover,
+.organ-info-panel .btn-explore:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(0,0,0,0.38);
+}
+
+.organ-info-panel .btn-glass {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.65);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.organ-info-panel .btn-glass:hover {
+  background: rgba(255,255,255,0.09);
+  color: #fff;
+  border-color: var(--panel-color-border, rgba(239,68,68,0.3));
+}
+
+
+.controls-hint {
+  bottom: 110px !important;
+}
+
+
+.organ-quick-btn:focus-visible {
+  outline: 2px solid var(--organ-color, #00d4ff);
+  outline-offset: 2px;
+}
+
+
+.oip-body > * {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+.organ-info-panel.visible .oip-body > * { opacity: 1; transform: translateY(0); }
+.organ-info-panel.visible .oip-body > *:nth-child(1) { transition-delay: 0.10s; }
+.organ-info-panel.visible .oip-body > *:nth-child(2) { transition-delay: 0.17s; }
+.organ-info-panel.visible .oip-body > *:nth-child(3) { transition-delay: 0.23s; }
+.organ-info-panel.visible .oip-body > *:nth-child(4) { transition-delay: 0.29s; }
+.organ-info-panel.visible .oip-body > *:nth-child(5) { transition-delay: 0.35s; }
+.organ-info-panel.visible .oip-body > *:nth-child(6) { transition-delay: 0.41s; }
+
