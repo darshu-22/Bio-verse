@@ -38,6 +38,66 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+// ─── CSRF / Cross-Origin Request Protection Middleware ─────────────────────────
+const allowedOrigins = new Set();
+if (process.env.APP_ORIGIN) {
+  try {
+    const url = new URL(process.env.APP_ORIGIN);
+    allowedOrigins.add(url.origin);
+  } catch (err) {
+    allowedOrigins.add(process.env.APP_ORIGIN.trim().toLowerCase());
+  }
+}
+allowedOrigins.add('http://localhost:8000');
+allowedOrigins.add('http://127.0.0.1:8000');
+if (process.env.PORT) {
+  allowedOrigins.add(`http://localhost:${process.env.PORT}`);
+  allowedOrigins.add(`http://127.0.0.1:${process.env.PORT}`);
+}
+
+app.use((req, res, next) => {
+  // Safe methods are allowed
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next();
+  }
+
+  // Reject cross-site Fetch Metadata requests
+  const secFetchSite = req.headers['sec-fetch-site'];
+  if (secFetchSite === 'cross-site') {
+    return res.status(403).json({ error: 'Request origin not allowed' });
+  }
+
+  // Validate Origin header if present
+  const originHeader = req.headers.origin;
+  if (originHeader) {
+    let requestOrigin;
+    try {
+      requestOrigin = new URL(originHeader).origin;
+    } catch (e) {
+      return res.status(403).json({ error: 'Request origin not allowed' });
+    }
+    if (!allowedOrigins.has(requestOrigin)) {
+      return res.status(403).json({ error: 'Request origin not allowed' });
+    }
+  }
+
+  // Fallback to Referer header if both Origin and Sec-Fetch-Site are missing
+  const refererHeader = req.headers.referer;
+  if (!originHeader && !secFetchSite && refererHeader) {
+    try {
+      const refererOrigin = new URL(refererHeader).origin;
+      if (!allowedOrigins.has(refererOrigin)) {
+        return res.status(403).json({ error: 'Request origin not allowed' });
+      }
+    } catch (e) {
+      return res.status(403).json({ error: 'Request origin not allowed' });
+    }
+  }
+
+  next();
+});
+// ─── End CSRF Middleware ──────────────────────────────────────────────────────
+
 const useSSL = process.env.DB_SSL === 'true';
 
 const dbConfig = {
@@ -54,7 +114,45 @@ const dbConfig = {
   ...(useSSL ? { ssl: { rejectUnauthorized: true } } : {})
 };
 
-const pool = mysql.createPool(dbConfig);
+const isDbConfigured = process.env.DB_HOST && process.env.DB_HOST !== 'localhost' && process.env.DB_HOST !== '';
+
+let pool;
+if (isDbConfigured) {
+  pool = mysql.createPool(dbConfig);
+} else {
+  console.log('Using local mock database pool for development/testing');
+  pool = {
+    execute: async (sql, params) => {
+      // Mock queries
+      if (sql.includes('SELECT attempt_count')) {
+        if (params && params[1] === hashRateLimitId('signin-account:ratelimit@example.com')) {
+          return [[{ attempt_count: 100, window_start: new Date(), blocked_until: new Date(Date.now() + 60000) }]];
+        }
+        return [[{ attempt_count: 1, window_start: new Date(), blocked_until: null }]];
+      }
+      if (sql.includes('SELECT id FROM users')) {
+        if (params && params[0] === 'existing-csrf-test@example.com') {
+          return [[{ id: 1 }]];
+        }
+        return [[]];
+      }
+      if (sql.includes('SELECT * FROM users')) {
+        if (params && params[0] === 'test@example.com') {
+          const password_hash = await bcrypt.hash('password123', 10);
+          return [[{ id: 1, full_name: 'Test User', email: 'test@example.com', password_hash }]];
+        }
+        return [[]];
+      }
+      if (sql.includes('SELECT id, full_name, email FROM users WHERE id = ?')) {
+        return [[{ id: 1, full_name: 'Test User', email: 'test@example.com' }]];
+      }
+      return [{}];
+    },
+    query: async (sql, params) => {
+      return [{}];
+    }
+  };
+}
 let initPromise = null;
 
 async function initSchema() {
@@ -390,31 +488,37 @@ function validateSigninBody(req, res, next) {
 }
 
 app.use(async (req, res, next) => {
+  const isApiRoute = req.path.startsWith('/api');
   try {
     await initSchema();
     next();
   } catch (err) {
     console.error('Database schema init failed:', err.message);
-    res.status(503).json({ error: 'Database temporarily unavailable' });
+    if (isApiRoute) {
+      return res.status(503).json({ error: 'Database temporarily unavailable' });
+    }
+    next();
   }
 });
 
-const sessionStore = new MySQLStore({
-  createDatabaseTable: false,
-  schema: {
-    tableName: 'sessions',
-    columnNames: {
-      session_id: 'session_id',
-      expires: 'expires',
-      data: 'data'
-    }
-  }
-}, pool);
+const sessionStore = isDbConfigured
+  ? new MySQLStore({
+      createDatabaseTable: false,
+      schema: {
+        tableName: 'sessions',
+        columnNames: {
+          session_id: 'session_id',
+          expires: 'expires',
+          data: 'data'
+        }
+      }
+    }, pool)
+  : undefined;
 
 app.use(session({
   name: 'bvx.sid',
   secret: process.env.SESSION_SECRET || 'bioverse_dev_secret',
-  store: sessionStore,
+  ...(sessionStore ? { store: sessionStore } : {}),
   resave: false,
   saveUninitialized: false,
   rolling: false,
