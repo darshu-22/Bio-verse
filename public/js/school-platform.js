@@ -8,8 +8,15 @@
 
 'use strict';
 
-
-
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 const SchoolDB = {
   PREFIX: 'bvx_school_',
@@ -455,7 +462,7 @@ class SchoolPlatform {
         <div class="dash-topbar-spacer"></div>
         <div class="dash-user-info">
           <div class="dash-avatar teacher-av">${this._initials(this.currentUser.name)}</div>
-          <span class="dash-username">${this.currentUser.name}</span>
+          <span class="dash-username">${escapeHTML(this.currentUser.name)}</span>
         </div>
         <button class="dash-back-btn" id="dash-back-to-app">← Back to App</button>
         <button class="dash-logout-btn" id="dash-logout-btn">Sign Out</button>
@@ -494,7 +501,7 @@ class SchoolPlatform {
           <div class="dash-tab-panel active" id="tab-overview">
             <div class="dash-page-header" style="display:flex;align-items:flex-end;justify-content:space-between;">
               <div>
-                <div class="dash-page-title">Good morning, ${this.currentUser.name.split(' ')[0]}! 👋</div>
+                <div class="dash-page-title">Good morning, ${escapeHTML(this.currentUser.name.split(' ')[0])}! 👋</div>
                 <div class="dash-page-subtitle">Here's what's happening across your classes today.</div>
               </div>
             </div>
@@ -532,10 +539,10 @@ class SchoolPlatform {
                     <div class="class-item">
                       <div class="class-icon ${cls.iconClass}">${cls.icon}</div>
                       <div class="class-info">
-                        <div class="class-name">${cls.name}</div>
-                        <div class="class-meta">${cls.studentIds.length} students · ${cls.schedule}</div>
+                        <div class="class-name">${escapeHTML(cls.name)}</div>
+                        <div class="class-meta">${cls.studentIds.length} students · ${escapeHTML(cls.schedule)}</div>
                       </div>
-                      <span class="class-badge">${cls.subject}</span>
+                      <span class="class-badge">${escapeHTML(cls.subject)}</span>
                     </div>
                   `).join('')}
                 </div>
@@ -551,7 +558,7 @@ class SchoolPlatform {
                     return `
                       <div class="assignment-item">
                         <div class="assignment-dot ${a.status}"></div>
-                        <div class="assignment-title">${a.title}</div>
+                        <div class="assignment-title">${escapeHTML(a.title)}</div>
                         <div class="assignment-due">${done}/${total}</div>
                         <span class="assignment-status ${a.status}">${a.status}</span>
                       </div>
@@ -601,11 +608,11 @@ class SchoolPlatform {
                   <div class="class-item">
                     <div class="class-icon ${cls.iconClass}">${cls.icon}</div>
                     <div class="class-info">
-                      <div class="class-name">${cls.name}</div>
-                      <div class="class-meta">${cls.studentIds.length} students · ${cls.schedule} · ${cls.subject}</div>
+                      <div class="class-name">${escapeHTML(cls.name)}</div>
+                      <div class="class-meta">${cls.studentIds.length} students · ${escapeHTML(cls.schedule)} · ${escapeHTML(cls.subject)}</div>
                     </div>
                     <div class="class-actions">
-                      <span class="class-badge">${cls.subject}</span>
+                      <span class="class-badge">${escapeHTML(cls.subject)}</span>
                       <button class="dash-btn-ghost" onclick="window.bioSchool._viewClass('${cls.id}')">View →</button>
                     </div>
                   </div>
@@ -636,8 +643,8 @@ class SchoolPlatform {
                     <div class="assignment-item">
                       <div class="assignment-dot ${a.status}"></div>
                       <div style="display:flex;flex-direction:column;gap:0.15rem;flex:1;">
-                        <div class="assignment-title">${a.title}</div>
-                        <div style="font-size:0.75rem;color:rgba(255,255,255,0.3);">${cls?.name || ''} · Due: ${a.due}</div>
+                        <div class="assignment-title">${escapeHTML(a.title)}</div>
+                        <div style="font-size:0.75rem;color:rgba(255,255,255,0.3);">${escapeHTML(cls?.name || '')} · Due: ${escapeHTML(a.due)}</div>
                       </div>
                       <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);">
                         ${done}/${total} completed
@@ -682,10 +689,10 @@ class SchoolPlatform {
                         <td>
                           <div class="student-name-cell">
                             <div class="student-mini-avatar">${this._initials(s.name)}</div>
-                            ${s.name}
+                            ${escapeHTML(s.name)}
                           </div>
                         </td>
-                        <td>${cls?.name || '—'}</td>
+                        <td>${escapeHTML(cls?.name || '—')}</td>
                         <td>
                           <div style="display:flex;align-items:center;gap:0.5rem;">
                             <div style="flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:999px;min-width:60px;">
@@ -720,7 +727,7 @@ class SchoolPlatform {
                   : 0;
                 return `
                   <div class="dash-card">
-                    <div class="dash-card-title">${cls.icon} ${cls.name}</div>
+                    <div class="dash-card-title">${cls.icon} ${escapeHTML(cls.name)}</div>
                     <div style="margin-bottom:0.75rem;font-size:0.8rem;color:rgba(255,255,255,0.35);">
                       ${clsStudents.length} students · Avg overall: ${avgProg}%
                     </div>
@@ -764,7 +771,7 @@ class SchoolPlatform {
                       <div class="quiz-track-icon">${emoji}</div>
                       <div class="quiz-track-info">
                         <div class="quiz-track-title">${SYSTEM_NAMES[q.system] || q.system}</div>
-                        <div class="quiz-track-sub">${q.studentName} · ${q.date}</div>
+                        <div class="quiz-track-sub">${escapeHTML(q.studentName)} · ${escapeHTML(q.date)}</div>
                       </div>
                       <div class="quiz-track-score" style="color:${pct>=80?'#00ffa3':pct>=60?'#ffd700':'#ff6b6b'}">
                         ${q.score}/${q.total}
@@ -931,7 +938,7 @@ class SchoolPlatform {
         <div class="dash-topbar-spacer"></div>
         <div class="dash-user-info">
           <div class="dash-avatar student-av">${this._initials(u.name)}</div>
-          <span class="dash-username">${u.name}</span>
+          <span class="dash-username">${escapeHTML(u.name)}</span>
         </div>
         <button class="dash-back-btn" id="dash-back-to-app">← Back to App</button>
         <button class="dash-logout-btn" id="dash-logout-btn">Sign Out</button>
@@ -962,7 +969,7 @@ class SchoolPlatform {
           <!-- OVERVIEW -->
           <div class="dash-tab-panel active" id="tab-overview">
             <div class="dash-page-header">
-              <div class="dash-page-title">Welcome back, ${u.name.split(' ')[0]}! 🎓</div>
+              <div class="dash-page-title">Welcome back, ${escapeHTML(u.name.split(' ')[0])}! 🎓</div>
               <div class="dash-page-subtitle">Keep exploring the human body and level up your knowledge.</div>
             </div>
 
@@ -1064,8 +1071,8 @@ class SchoolPlatform {
                     <div class="assignment-item">
                       <div class="assignment-dot ${status}"></div>
                       <div style="display:flex;flex-direction:column;gap:0.15rem;flex:1;">
-                        <div class="assignment-title">${a.title}</div>
-                        <div style="font-size:0.75rem;color:rgba(255,255,255,0.3);">${SYSTEM_NAMES[a.system] || ''} · Due: ${a.due}</div>
+                        <div class="assignment-title">${escapeHTML(a.title)}</div>
+                        <div style="font-size:0.75rem;color:rgba(255,255,255,0.3);">${SYSTEM_NAMES[a.system] || ''} · Due: ${escapeHTML(a.due)}</div>
                       </div>
                       <span class="assignment-status ${status}">${done ? 'complete' : status}</span>
                       ${!done ? `<button class="dash-btn-ghost" style="font-size:0.75rem;" onclick="window.bioSchool._startAssignment('${a.id}')">Start</button>` : ''}
@@ -1267,7 +1274,7 @@ class SchoolPlatform {
               <label class="auth-label" for="new-assign-class">Class</label>
               <select class="auth-input" id="new-assign-class" required>
                 <option value="">Select class...</option>
-                ${classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                ${classes.map(c => `<option value="${c.id}">${escapeHTML(c.name)}</option>`).join('')}
               </select>
             </div>
             <div class="auth-field-group">
