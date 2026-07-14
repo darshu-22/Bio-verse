@@ -114,45 +114,7 @@ const dbConfig = {
   ...(useSSL ? { ssl: { rejectUnauthorized: true } } : {})
 };
 
-const isDbConfigured = process.env.DB_HOST && process.env.DB_HOST !== 'localhost' && process.env.DB_HOST !== '';
-
-let pool;
-if (isDbConfigured) {
-  pool = mysql.createPool(dbConfig);
-} else {
-  console.log('Using local mock database pool for development/testing');
-  pool = {
-    execute: async (sql, params) => {
-      // Mock queries
-      if (sql.includes('SELECT attempt_count')) {
-        if (params && params[1] === hashRateLimitId('signin-account:ratelimit@example.com')) {
-          return [[{ attempt_count: 100, window_start: new Date(), blocked_until: new Date(Date.now() + 60000) }]];
-        }
-        return [[{ attempt_count: 1, window_start: new Date(), blocked_until: null }]];
-      }
-      if (sql.includes('SELECT id FROM users')) {
-        if (params && params[0] === 'existing-csrf-test@example.com') {
-          return [[{ id: 1 }]];
-        }
-        return [[]];
-      }
-      if (sql.includes('SELECT * FROM users')) {
-        if (params && params[0] === 'test@example.com') {
-          const password_hash = await bcrypt.hash('password123', 10);
-          return [[{ id: 1, full_name: 'Test User', email: 'test@example.com', password_hash }]];
-        }
-        return [[]];
-      }
-      if (sql.includes('SELECT id, full_name, email FROM users WHERE id = ?')) {
-        return [[{ id: 1, full_name: 'Test User', email: 'test@example.com' }]];
-      }
-      return [{}];
-    },
-    query: async (sql, params) => {
-      return [{}];
-    }
-  };
-}
+const pool = mysql.createPool(dbConfig);
 let initPromise = null;
 
 async function initSchema() {
@@ -501,24 +463,22 @@ app.use(async (req, res, next) => {
   }
 });
 
-const sessionStore = isDbConfigured
-  ? new MySQLStore({
-      createDatabaseTable: false,
-      schema: {
-        tableName: 'sessions',
-        columnNames: {
-          session_id: 'session_id',
-          expires: 'expires',
-          data: 'data'
-        }
-      }
-    }, pool)
-  : undefined;
+const sessionStore = new MySQLStore({
+  createDatabaseTable: false,
+  schema: {
+    tableName: 'sessions',
+    columnNames: {
+      session_id: 'session_id',
+      expires: 'expires',
+      data: 'data'
+    }
+  }
+}, pool);
 
 app.use(session({
   name: 'bvx.sid',
   secret: process.env.SESSION_SECRET || 'bioverse_dev_secret',
-  ...(sessionStore ? { store: sessionStore } : {}),
+  store: sessionStore,
   resave: false,
   saveUninitialized: false,
   rolling: false,
