@@ -20,6 +20,23 @@ if (isProd && !process.env.RATE_LIMIT_SECRET) {
 }
 
 const app = express();
+app.disable('x-powered-by');
+
+const isVercel = (process.env.VERCEL === '1' && process.env.VERCEL_URL && process.env.VERCEL_URL !== '') || process.env.NOW_REGION !== undefined;
+
+if (!isVercel) {
+  app.use((req, res, next) => {
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://dggfqhqyjmxqlfhy.public.blob.vercel-storage.com https://cdn.jsdelivr.net; img-src 'self'; media-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none';");
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(self), fullscreen=(self)');
+    res.setHeader('X-DNS-Prefetch-Control', 'off');
+    res.setHeader('X-Download-Options', 'noopen');
+    res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+    next();
+  });
+}
 
 app.set('trust proxy', 1);
 
