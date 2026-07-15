@@ -7,6 +7,9 @@
     "start": "node server.js",
     "dev": "node server.js"
   },
+  "engines": {
+    "node": "22.x"
+  },
   "dependencies": {
     "@vercel/blob": "^2.6.1",
     "bcrypt": "^5.1.1",
