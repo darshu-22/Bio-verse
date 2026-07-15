@@ -118,41 +118,6 @@ Bioverse/
 
 ---
 
-## 🖼️ Screenshots
-
-> [!NOTE]
-> *Replace placeholders below with project screenshots when deployed to showcase the application.*
-
-*   **Homepage Interface:**
-    ```
-    +-------------------------------------------------------------+
-    |                         BioVerse X                          |
-    |  Explore the living human anatomy in immersive 3D space.    |
-    |                                                             |
-    |      [ Open 3D Explorer ]         [ Open School Portal ]     |
-    +-------------------------------------------------------------+
-    ```
-*   **3D Anatomical Explorer:**
-    ```
-    +---------------------------------+---------------------------+
-    |                                 |   System Controls         |
-    |         [ Skeletal System ]     |   - Rotate                |
-    |             (3D Model)          |   - Zoom                  |
-    |                                 |   - Gesture Controls (On) |
-    +---------------------------------+---------------------------+
-    ```
-*   **Teacher Dashboard Portal:**
-    ```
-    +-------------------------------------------------------------+
-    | Good Morning, Dr. Chen!               [ Create Assignment ] |
-    | Roster: 24 Students | Active Quizzes: 4                     |
-    |                                                             |
-    | [Class Progress Coverage]   [Recent Student Quiz Submissions]|
-    +-------------------------------------------------------------+
-    ```
-
----
-
 ## ⚙️ Installation & Setup
 
 ### Prerequisites
